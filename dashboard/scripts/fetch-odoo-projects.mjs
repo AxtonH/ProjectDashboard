@@ -42,11 +42,18 @@ const requiredTaskFields = [
   'parent_id',
 ];
 
-const projectFields = ['name', 'partner_id', 'sale_order_id', 'tag_ids'];
+const projectFields = ['name', 'partner_id', 'sale_order_id', 'tag_ids', 'x_studio_market_2'];
 const saleOrderFields = ['name', 'invoice_status', 'project_id', 'project_ids'];
 const saleOrderLineFields = ['order_id', 'product_uom_qty', 'qty_invoiced'];
 const userFields = ['name'];
-const planningSlotFields = ['project_id', 'resource_id', 'role_id'];
+const planningSlotFields = [
+  'project_id',
+  'resource_id',
+  'role_id',
+  'x_studio_parent_task',
+  'start_datetime',
+  'end_datetime',
+];
 const planningAvailabilityFields = ['project_id', 'resource_id', 'role_id', 'start_datetime', 'end_datetime'];
 const employeeFields = ['name', 'resource_id', 'department_id', 'active'];
 const projectTagFields = ['name'];
@@ -350,15 +357,16 @@ const isDesignerRole = (roleName) => {
 
 const isStrategistRole = (roleName) => normalizeRole(roleName).includes('strategist');
 
-function buildRoleMap(slots, roleMatcher) {
+function buildRoleMap(slots, roleMatcher, keySelector) {
   const map = new Map();
+  const now = Date.now();
 
   for (const slot of slots) {
-    const projectId = slot.project_id?.[0];
+    const keyId = keySelector(slot);
     const resourceId = slot.resource_id?.[0];
     const resourceName = slot.resource_id?.[1];
 
-    if (!projectId || !resourceId || !resourceName) {
+    if (!keyId || !resourceId || !resourceName) {
       continue;
     }
 
@@ -367,14 +375,73 @@ function buildRoleMap(slots, roleMatcher) {
       continue;
     }
 
-    map.set(projectId, {
+    const candidate = {
       id: resourceId,
       name: resourceName,
       role: currentRoleName,
+      start: parseDate(slot.start_datetime ?? null),
+      end: parseDate(slot.end_datetime ?? null),
+      slotId: slot.id ?? 0,
+    };
+
+    const existing = map.get(keyId);
+    if (!existing || isPreferredRoleSlot(candidate, existing, now)) {
+      map.set(keyId, candidate);
+    }
+  }
+
+  const normalized = new Map();
+  for (const [key, value] of map.entries()) {
+    normalized.set(key, {
+      id: value.id,
+      name: value.name,
+      role: value.role,
     });
   }
 
-  return map;
+  return normalized;
+}
+
+function buildRoleListMap(slots, roleMatcher, keySelector) {
+  const map = new Map();
+
+  for (const slot of slots) {
+    const keyId = keySelector(slot);
+    const resourceId = slot.resource_id?.[0];
+    const resourceName = slot.resource_id?.[1];
+
+    if (!keyId || !resourceId || !resourceName) {
+      continue;
+    }
+
+    const currentRoleName = slot.role_id?.[1]?.trim() ?? null;
+    if (typeof currentRoleName !== 'string' || !roleMatcher(currentRoleName)) {
+      continue;
+    }
+
+    if (!map.has(keyId)) {
+      map.set(keyId, new Map());
+    }
+
+    const roleMap = map.get(keyId);
+    if (!roleMap.has(resourceId)) {
+      roleMap.set(resourceId, {
+        id: resourceId,
+        name: resourceName,
+        role: currentRoleName,
+      });
+    }
+  }
+
+  const normalized = new Map();
+  for (const [key, roleMap] of map.entries()) {
+    normalized.set(
+      key,
+      Array.from(roleMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
+    );
+  }
+
+  return normalized;
 }
 
 function parseDate(value) {
@@ -384,6 +451,33 @@ function parseDate(value) {
   const date = new Date(`${value}Z`);
   const time = date.getTime();
   return Number.isNaN(time) ? null : time;
+}
+
+function classifyRoleSlot(slot, now) {
+  if (slot.start !== null && slot.end !== null && slot.start <= now && slot.end >= now) {
+    return { tier: 0, distance: 0 };
+  }
+  if (slot.end !== null && slot.end < now) {
+    return { tier: 1, distance: now - slot.end };
+  }
+  if (slot.start !== null && slot.start > now) {
+    return { tier: 2, distance: slot.start - now };
+  }
+  return { tier: 3, distance: Number.POSITIVE_INFINITY };
+}
+
+function isPreferredRoleSlot(candidate, existing, now) {
+  const nextRank = classifyRoleSlot(candidate, now);
+  const currentRank = classifyRoleSlot(existing, now);
+
+  if (nextRank.tier !== currentRank.tier) {
+    return nextRank.tier < currentRank.tier;
+  }
+  if (nextRank.distance !== currentRank.distance) {
+    return nextRank.distance < currentRank.distance;
+  }
+
+  return candidate.slotId > existing.slotId;
 }
 
 function overlapsWindow(start, end, windowStart, windowEnd) {
@@ -460,21 +554,30 @@ function normalizeTasks(
   projectSaleOrderMap,
   userMap,
   strategistMap,
-  designerRoleMap,
+  designerRoleListMap,
 ) {
   return tasks.map((task) => {
+    const taskId = task.id;
     const projectId = task.project_id?.[0];
     const projectRecord = projectMap.get(projectId);
     const saleOrderId = projectId ? projectSaleOrderMap.get(projectId) : undefined;
     const saleOrderRecord = saleOrderId ? saleOrderMap.get(saleOrderId) : undefined;
     const invoiceSummary = saleOrderId ? saleOrderInvoiceMap.get(saleOrderId) : undefined;
 
-    const designerFromRole = projectId ? designerRoleMap.get(projectId) ?? null : null;
-    const designerFromTask =
-      (task.x_studio_designer ?? [])
-        .map((userId) => userMap.get(userId))
-        .filter(Boolean)[0] ?? null;
-    const normalizedDesigner = designerFromRole || designerFromTask;
+    const designerFromRole = designerRoleListMap.get(taskId) ?? [];
+    const designerFromTask = (task.x_studio_designer ?? [])
+      .map((userId) => userMap.get(userId))
+      .filter(Boolean)
+      .map((user) => ({ id: user.id, name: user.name }));
+    const designersMap = new Map();
+    for (const person of designerFromRole) {
+      designersMap.set(person.id, { id: person.id, name: person.name });
+    }
+    for (const person of designerFromTask) {
+      designersMap.set(person.id, { id: person.id, name: person.name });
+    }
+    const normalizedDesigners = Array.from(designersMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+    const primaryDesigner = normalizedDesigners[0] ?? null;
 
     const isCanceled = typeof task.state === 'string' && task.state.toLowerCase().includes('cancel');
     const normalizedStatus = isCanceled
@@ -489,11 +592,11 @@ function normalizeTasks(
       parentProjectName: task.project_id?.[1] ?? null,
       accountName: projectRecord?.partner_id?.[1] ?? projectRecord?.name ?? null,
       clientAccount: projectRecord?.partner_id?.[1] ?? null,
+      market: projectRecord?.x_studio_market_2?.[1] ?? null,
       description: task.description ?? '',
-      designer: normalizedDesigner
-        ? { id: normalizedDesigner.id, name: normalizedDesigner.name }
-        : null,
-      strategist: projectId ? strategistMap.get(projectId) ?? null : null,
+      designer: primaryDesigner,
+      designers: normalizedDesigners,
+      strategist: strategistMap.get(taskId) ?? null,
       status: normalizedStatus,
       invoice: saleOrderRecord
         ? {
@@ -571,8 +674,16 @@ async function main() {
     const saleOrderInvoiceMap = buildSaleOrderInvoiceMap(saleOrderLines);
     const projectSaleOrderMap = buildProjectSaleOrderMap(projects, mergedSaleOrders);
     const userMap = buildMap(users);
-    const strategistMap = buildRoleMap(planningSlots, isStrategistRole);
-    const designerRoleMap = buildRoleMap(planningSlots, isDesignerRole);
+    const strategistMap = buildRoleMap(
+      planningSlots,
+      isStrategistRole,
+      (slot) => slot.x_studio_parent_task?.[0] ?? null,
+    );
+    const designerRoleListMap = buildRoleListMap(
+      planningSlots,
+      isDesignerRole,
+      (slot) => slot.x_studio_parent_task?.[0] ?? null,
+    );
     const designerAvailability = buildCreativeAvailability(
       availabilitySlots,
       creativeEmployees,
@@ -587,7 +698,7 @@ async function main() {
       projectSaleOrderMap,
       userMap,
       strategistMap,
-      designerRoleMap,
+      designerRoleListMap,
     );
 
     await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });

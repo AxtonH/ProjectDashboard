@@ -24,8 +24,10 @@ export type ProjectRow = {
   parentProjectName: string | null;
   accountName: string | null;
   clientAccount: string | null;
+  market: string | null;
   description: string;
   designer: PersonRole | null;
+  designers?: PersonRole[];
   strategist: PersonRole | null;
   status: StatusInfo | null;
   invoice: InvoiceInfo | null;

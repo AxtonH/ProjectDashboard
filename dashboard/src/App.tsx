@@ -5,6 +5,14 @@ import { AvailabilityView } from './pages/AvailabilityView';
 import { BoardView } from './pages/BoardView';
 
 type ViewMode = 'table' | 'cards' | 'availability' | 'board';
+type MarketFilter = 'all' | 'UAE' | 'KSA';
+
+const segmentButtonClass = (active: boolean) =>
+  `rounded-full px-3 py-1.5 text-[0.72rem] font-semibold tracking-[0.01em] transition ${
+    active
+      ? 'bg-slate-900 text-white shadow-[0_1px_2px_rgba(15,23,42,0.25)]'
+      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+  }`;
 
 function ViewSwitcher({
   activeView,
@@ -14,42 +22,69 @@ function ViewSwitcher({
   onChange: (view: ViewMode) => void;
 }) {
   return (
-    <div className="inline-flex items-center rounded-full border border-divider bg-white p-1 text-xs font-semibold text-slate-500 shadow-sm">
+    <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
       <button
         type="button"
         onClick={() => onChange('table')}
-        className={`rounded-full px-3 py-1 transition ${
-          activeView === 'table' ? 'bg-slate-900 text-white' : 'hover:text-slate-800'
-        }`}
+        className={segmentButtonClass(activeView === 'table')}
       >
-        View 1
+        Table
       </button>
       <button
         type="button"
         onClick={() => onChange('cards')}
-        className={`rounded-full px-3 py-1 transition ${
-          activeView === 'cards' ? 'bg-slate-900 text-white' : 'hover:text-slate-800'
-        }`}
+        className={segmentButtonClass(activeView === 'cards')}
       >
-        View 2
+        Cards
       </button>
       <button
         type="button"
         onClick={() => onChange('availability')}
-        className={`rounded-full px-3 py-1 transition ${
-          activeView === 'availability' ? 'bg-slate-900 text-white' : 'hover:text-slate-800'
-        }`}
+        className={segmentButtonClass(activeView === 'availability')}
       >
-        View 3
+        Availability
       </button>
       <button
         type="button"
         onClick={() => onChange('board')}
-        className={`rounded-full px-3 py-1 transition ${
-          activeView === 'board' ? 'bg-slate-900 text-white' : 'hover:text-slate-800'
-        }`}
+        className={segmentButtonClass(activeView === 'board')}
       >
-        View 4
+        Board
+      </button>
+    </div>
+  );
+}
+
+function MarketSwitcher({
+  activeMarket,
+  onChange,
+}: {
+  activeMarket: MarketFilter;
+  onChange: (market: MarketFilter) => void;
+}) {
+  return (
+    <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+      <span className="px-2 text-[0.63rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Market</span>
+      <button
+        type="button"
+        onClick={() => onChange('all')}
+        className={segmentButtonClass(activeMarket === 'all')}
+      >
+        All
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('UAE')}
+        className={segmentButtonClass(activeMarket === 'UAE')}
+      >
+        UAE
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('KSA')}
+        className={segmentButtonClass(activeMarket === 'KSA')}
+      >
+        KSA
       </button>
     </div>
   );
@@ -57,21 +92,27 @@ function ViewSwitcher({
 
 function App() {
   const [view, setView] = useState<ViewMode>('table');
-  const switcher = <ViewSwitcher activeView={view} onChange={setView} />;
+  const [market, setMarket] = useState<MarketFilter>('all');
+  const switcher = (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <ViewSwitcher activeView={view} onChange={setView} />
+      <MarketSwitcher activeMarket={market} onChange={setMarket} />
+    </div>
+  );
 
   if (view === 'cards') {
-    return <CardView viewSwitcher={switcher} />;
+    return <CardView viewSwitcher={switcher} marketFilter={market} />;
   }
 
   if (view === 'availability') {
-    return <AvailabilityView viewSwitcher={switcher} />;
+    return <AvailabilityView viewSwitcher={switcher} marketFilter={market} />;
   }
 
   if (view === 'board') {
-    return <BoardView viewSwitcher={switcher} />;
+    return <BoardView viewSwitcher={switcher} marketFilter={market} />;
   }
 
-  return <MainView viewSwitcher={switcher} />;
+  return <MainView viewSwitcher={switcher} marketFilter={market} />;
 }
 
 export default App;

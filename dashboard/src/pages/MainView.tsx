@@ -6,6 +6,7 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 type SortKey = 'startDate' | 'endDate' | 'status' | 'submissionDate';
 type SortDirection = 'asc' | 'desc';
 type AtRiskValue = 'Yes' | 'No';
+type MarketFilter = 'all' | 'UAE' | 'KSA';
 type ColumnFilterState = Record<string, string>;
 type DateRangeFilterState = {
   startDateFrom: string;
@@ -150,6 +151,12 @@ const toTimestamp = (value: string | null) => {
   return Number.isNaN(time) ? null : time;
 };
 
+const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
+  if (marketFilter === 'all') return true;
+  const market = (row.market ?? '').trim().toUpperCase();
+  return market.includes(marketFilter);
+};
+
 const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) => {
   if (key === 'account') {
     return `${row.accountName ?? ''}${row.clientAccount ? ` / ${row.clientAccount}` : ''}`.trim() || '—';
@@ -161,6 +168,8 @@ const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) =>
     return row.description ? toPlainText(row.description) : '—';
   }
   if (key === 'designer') {
+    const names = (row.designers ?? []).map((person) => person.name);
+    if (names.length > 0) return names.join(', ');
     return row.designer?.name ?? '—';
   }
   if (key === 'strategist') {
@@ -186,7 +195,7 @@ const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) =>
   return '—';
 };
 
-export function MainView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
+export function MainView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?: ReactNode; marketFilter?: MarketFilter }) {
   const [sortState, setSortState] = useState<{ key: SortKey; direction: SortDirection }>({
     key: 'submissionDate',
     direction: 'desc',
@@ -218,12 +227,14 @@ export function MainView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
     window.localStorage.setItem(atRiskStorageKey, JSON.stringify(atRiskState));
   }, [atRiskState]);
 
+  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [marketFilter]);
+
   const columnFilterOptions = useMemo(() => {
     const options: Record<string, string[]> = {};
     columns.forEach((column) => {
       const values = Array.from(
         new Set(
-          baseRows.map((row) => {
+          marketRows.map((row) => {
             const rowAtRisk = atRiskState[row.taskId] ?? 'No';
             return getColumnValue(row, column.key, rowAtRisk);
           }),
@@ -232,10 +243,10 @@ export function MainView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
       options[column.key] = values;
     });
     return options;
-  }, [atRiskState]);
+  }, [atRiskState, marketRows]);
 
   const filteredRows = useMemo(() => {
-    return baseRows.filter((row) => {
+    return marketRows.filter((row) => {
       const rowAtRisk = atRiskState[row.taskId] ?? 'No';
       const startTime = toTimestamp(row.startDate);
       const endTime = toTimestamp(row.endDate);
@@ -259,7 +270,7 @@ export function MainView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
 
       return matchesDateRanges && matchesColumnFilters;
     });
-  }, [atRiskState, columnFilters, dateRangeFilters]);
+  }, [atRiskState, columnFilters, dateRangeFilters, marketRows]);
 
   const sortedRows = useMemo(() => {
     const multiplier = sortState.direction === 'asc' ? 1 : -1;
@@ -317,13 +328,13 @@ export function MainView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
       title="Main Project View"
       description="Live pull of parent project tasks from Odoo with every required column normalized for the table experience shown in the reference."
       actions={
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
           {viewSwitcher}
-          <span className="rounded-full border border-divider px-3 py-1 font-medium text-slate-600">
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
             Last sync: {formattedLastSync}
           </span>
-          <span className="rounded-full border border-divider px-3 py-1 text-slate-400">
-            {snapshot.source.tasks} tasks
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-500">
+            {sortedRows.length} tasks
           </span>
         </div>
       }
@@ -467,7 +478,15 @@ export function MainView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
                         </button>
                       </td>
                       <td className="px-5 py-3" style={columnStyles.designer}>
-                        {row.designer ? (
+                        {(row.designers ?? []).length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {(row.designers ?? []).map((person) => (
+                              <Pill key={`designer-${row.taskId}-${person.id}`} tone={riskRoleTone}>
+                                {person.name}
+                              </Pill>
+                            ))}
+                          </div>
+                        ) : row.designer ? (
                           <Pill tone={riskRoleTone}>{row.designer.name}</Pill>
                         ) : (
                           <span className="text-xs text-slate-400">—</span>

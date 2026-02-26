@@ -5,6 +5,7 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
 type AtRiskValue = 'Yes' | 'No';
 type BoardColumnKey = 'open' | 'progress' | 'completed' | 'atRisk';
+type MarketFilter = 'all' | 'UAE' | 'KSA';
 
 const snapshot = snapshotRaw as OdooSnapshot;
 const baseRows: ProjectRow[] = snapshot.rows ?? [];
@@ -64,7 +65,15 @@ function formatDate(value: string | null) {
   }).format(date);
 }
 
-export function BoardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
+const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
+  if (marketFilter === 'all') return true;
+  const market = (row.market ?? '').trim().toUpperCase();
+  return market.includes(marketFilter);
+};
+
+export function BoardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?: ReactNode; marketFilter?: MarketFilter }) {
+  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [marketFilter]);
+
   const persistedAtRiskState = useMemo<Record<number, AtRiskValue>>(() => {
     if (typeof window === 'undefined') return {};
     try {
@@ -91,7 +100,7 @@ export function BoardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
       atRisk: [],
     };
 
-    for (const row of baseRows) {
+    for (const row of marketRows) {
       const atRisk = (persistedAtRiskState[row.taskId] ?? 'No') === 'Yes';
       const key = classifyRow(row.status?.name, atRisk);
       buckets[key].push(row);
@@ -108,7 +117,7 @@ export function BoardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
     }
 
     return buckets;
-  }, [persistedAtRiskState]);
+  }, [marketRows, persistedAtRiskState]);
 
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())
@@ -121,13 +130,13 @@ export function BoardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
       title="Board View"
       description="Four-column board: Open/New, In Progress, Completed, and At Risk."
       actions={
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
           {viewSwitcher}
-          <span className="rounded-full border border-divider px-3 py-1 font-medium text-slate-600">
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
             Last sync: {formattedLastSync}
           </span>
-          <span className="rounded-full border border-divider px-3 py-1 text-slate-400">
-            {baseRows.length} tasks
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-500">
+            {marketRows.length} tasks
           </span>
         </div>
       }
@@ -164,4 +173,3 @@ export function BoardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
     </AppShell>
   );
 }
-

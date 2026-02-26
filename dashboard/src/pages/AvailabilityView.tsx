@@ -4,6 +4,7 @@ import { AppShell } from '../components/layout/AppShell';
 import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
 type WorkloadLabel = 'Available' | 'Acceptable' | 'High' | 'Overload';
+type MarketFilter = 'all' | 'UAE' | 'KSA';
 
 type PersonAvailability = {
   id: number;
@@ -41,6 +42,12 @@ const overlapsPast7Days = (row: ProjectRow) => {
   return false;
 };
 
+const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
+  if (marketFilter === 'all') return true;
+  const market = (row.market ?? '').trim().toUpperCase();
+  return market.includes(marketFilter);
+};
+
 const getWorkload = (projectsThisWeek: number): WorkloadLabel => {
   if (projectsThisWeek >= 3) return 'Overload';
   if (projectsThisWeek >= 2) return 'High';
@@ -55,27 +62,27 @@ function workloadStyle(workload: WorkloadLabel) {
   return 'border-rose-300 bg-rose-200 text-rose-900';
 }
 
-export function AvailabilityView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
-  const availabilityCards = useMemo<PersonAvailability[]>(() => {
-    const sourceCards = snapshot.designerAvailability ?? [];
-    if (sourceCards.length > 0) {
-      return sourceCards.map((entry) => ({
-        id: entry.id,
-        name: entry.name,
-        projectsThisWeek: entry.projectsPast7Days,
-        projects: entry.projectNamesPast7Days,
-        workload: getWorkload(entry.projectsPast7Days),
-      }));
-    }
+export function AvailabilityView({
+  viewSwitcher,
+  marketFilter = 'all',
+}: {
+  viewSwitcher?: ReactNode;
+  marketFilter?: MarketFilter;
+}) {
+  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [marketFilter]);
 
+  const availabilityCards = useMemo<PersonAvailability[]>(() => {
     const map = new Map<number, { id: number; name: string; projects: Set<string> }>();
-    for (const row of baseRows) {
-      if (!row.designer) continue;
-      if (!map.has(row.designer.id)) {
-        map.set(row.designer.id, { id: row.designer.id, name: row.designer.name, projects: new Set() });
-      }
-      if (isPlanningStatus(row.status?.name) && overlapsPast7Days(row)) {
-        map.get(row.designer.id)?.projects.add(row.parentProjectName ?? row.taskName);
+    for (const row of marketRows) {
+      const designers = (row.designers ?? []).length > 0 ? (row.designers ?? []) : (row.designer ? [row.designer] : []);
+      if (designers.length === 0) continue;
+      for (const designer of designers) {
+        if (!map.has(designer.id)) {
+          map.set(designer.id, { id: designer.id, name: designer.name, projects: new Set() });
+        }
+        if (isPlanningStatus(row.status?.name) && overlapsPast7Days(row)) {
+          map.get(designer.id)?.projects.add(row.parentProjectName ?? row.taskName);
+        }
       }
     }
 
@@ -91,7 +98,7 @@ export function AvailabilityView({ viewSwitcher }: { viewSwitcher?: ReactNode })
         if (b.projectsThisWeek !== a.projectsThisWeek) return b.projectsThisWeek - a.projectsThisWeek;
         return a.name.localeCompare(b.name);
       });
-  }, []);
+  }, [marketRows]);
 
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())
@@ -103,12 +110,12 @@ export function AvailabilityView({ viewSwitcher }: { viewSwitcher?: ReactNode })
       title="Designer Availability View"
       description="One card per designer from planning slots, with distinct project count over the past 7 days."
       actions={
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
           {viewSwitcher}
-          <span className="rounded-full border border-divider px-3 py-1 font-medium text-slate-600">
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
             Last sync: {formattedLastSync}
           </span>
-          <span className="rounded-full border border-divider px-3 py-1 text-slate-400">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-500">
             {availabilityCards.length} designers
           </span>
         </div>

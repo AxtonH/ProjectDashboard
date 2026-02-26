@@ -6,6 +6,7 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 type DaysFilter = 'all' | 'overdue' | '0-7' | '8-14' | '15+' | 'tbd';
 type OverdueFilter = 'all' | 'overdue' | 'not_overdue';
 type AtRiskValue = 'Yes' | 'No';
+type MarketFilter = 'all' | 'UAE' | 'KSA';
 
 const snapshot = snapshotRaw as OdooSnapshot;
 const baseRows: ProjectRow[] = snapshot.rows ?? [];
@@ -75,6 +76,12 @@ function invoiceTone(label: string) {
   return 'bg-slate-50 text-slate-700 border border-slate-200';
 }
 
+const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
+  if (marketFilter === 'all') return true;
+  const market = (row.market ?? '').trim().toUpperCase();
+  return market.includes(marketFilter);
+};
+
 type FilterOption = { label: string; value: string };
 
 function FilterChip({
@@ -139,7 +146,7 @@ function SearchableFilterChip({
   );
 }
 
-export function CardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
+export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?: ReactNode; marketFilter?: MarketFilter }) {
   const [designerFilter, setDesignerFilter] = useState('');
   const [accountFilter, setAccountFilter] = useState('all');
   const [daysFilter, setDaysFilter] = useState<DaysFilter>('all');
@@ -162,17 +169,21 @@ export function CardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
       return {};
     }
   }, []);
+  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [marketFilter]);
 
   const designerOptions = useMemo(
     () =>
       Array.from(
         new Set(
-          baseRows
-            .filter((row) => row.designer)
-            .map((row) => row.designer!.name),
+          marketRows
+            .flatMap((row) => {
+              const names = (row.designers ?? []).map((person) => person.name);
+              if (names.length > 0) return names;
+              return row.designer ? [row.designer.name] : [];
+            }),
         ),
       ).sort((a, b) => a.localeCompare(b)),
-    [],
+    [marketRows],
   );
 
   const accountOptions = useMemo<FilterOption[]>(
@@ -180,17 +191,17 @@ export function CardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
       { label: 'All', value: 'all' },
       ...Array.from(
         new Map(
-          baseRows
+          marketRows
             .filter((row) => row.accountName)
             .map((row) => [String(row.accountName), String(row.accountName)]),
         ),
       ).map(([value, label]) => ({ value, label })),
     ],
-    [],
+    [marketRows],
   );
 
   const cards = useMemo(() => {
-    const filtered = baseRows
+    const filtered = marketRows
       .map((row) => {
         const daysRemaining = getDaysRemaining(row.endDate);
         const atRisk = (persistedAtRiskState[row.taskId] ?? 'No') === 'Yes';
@@ -198,7 +209,10 @@ export function CardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
       })
       .filter(({ row, daysRemaining }) => {
         const query = designerFilter.trim().toLowerCase();
-        const matchesDesigner = !query || (row.designer?.name ?? '').toLowerCase().includes(query);
+        const designerNames = (row.designers ?? []).map((person) => person.name);
+        const fallbackNames = designerNames.length > 0 ? designerNames : (row.designer ? [row.designer.name] : []);
+        const matchesDesigner =
+          !query || fallbackNames.some((name) => name.toLowerCase().includes(query));
         const matchesAccount =
           accountFilter === 'all' || String(row.accountName ?? '') === String(accountFilter);
         const matchesDays = matchesDaysFilter(daysRemaining, daysFilter);
@@ -223,7 +237,7 @@ export function CardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
       previousColorIndex = colorIndex;
       return { ...entry, cardColor: cardColorPalette[colorIndex] };
     });
-  }, [accountFilter, addedSort, daysFilter, designerFilter, overdueFilter, persistedAtRiskState]);
+  }, [accountFilter, addedSort, daysFilter, designerFilter, marketRows, overdueFilter, persistedAtRiskState]);
 
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())
@@ -258,12 +272,12 @@ export function CardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
       title="Project Card View"
       description="Card layout for scanning project health quickly. Use filters to narrow by designer, account, timeline, and risk."
       actions={
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
           {viewSwitcher}
-          <span className="rounded-full border border-divider px-3 py-1 font-medium text-slate-600">
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
             Last sync: {formattedLastSync}
           </span>
-          <span className="rounded-full border border-divider px-3 py-1 text-slate-400">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-500">
             {cards.length} cards
           </span>
         </div>
@@ -348,6 +362,8 @@ export function CardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
                     : 'text-emerald-600';
             const atRiskPill = 'border-rose-300 bg-rose-100 text-rose-700';
             const strategistValue = row.strategist?.name ?? 'TBD';
+            const designerNames = (row.designers ?? []).map((person) => person.name);
+            const designerValue = designerNames.length > 0 ? designerNames.join(', ') : (row.designer?.name ?? 'TBD');
 
             return (
               <article
@@ -378,7 +394,9 @@ export function CardView({ viewSwitcher }: { viewSwitcher?: ReactNode }) {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px]">
                   <p className="min-w-0">
                     <span className="text-slate-500">Designer: </span>
-                    <span className="text-slate-800">{row.designer?.name ?? 'TBD'}</span>
+                    <span className={designerValue === 'TBD' ? 'text-slate-400' : 'text-slate-800'}>
+                      {designerValue}
+                    </span>
                   </p>
                   <p className="min-w-0">
                     <span className="text-slate-500">Strategist: </span>
