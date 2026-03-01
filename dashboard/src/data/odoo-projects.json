@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-02-26T15:08:38.271Z",
+  "generatedAt": "2026-02-26T15:36:43.344Z",
   "source": {
     "tasks": 820,
     "projects": 184,
     "saleOrders": 3608,
     "users": 25,
-    "planningSlots": 3855,
+    "planningSlots": 3856,
     "planningSlotsAvailability": 15362,
-    "designerCards": 77,
+    "designerCards": 70,
     "creativeEmployees": 77
   },
   "rows": [
@@ -27737,13 +27737,24 @@
   ],
   "designerAvailability": [
     {
+      "id": 75,
+      "name": "Yara Saleh Mustafa Hijazi",
+      "projectsPast7Days": 2,
+      "projectNamesPast7Days": [
+        "Dubai Future Foundation (DFF)",
+        "themAgain"
+      ],
+      "hoursPast7Days": 35.5
+    },
+    {
       "id": 25,
       "name": "Haneen Yousef Ahmad Albarbarawi",
       "projectsPast7Days": 2,
       "projectNamesPast7Days": [
         "Dubai Future Foundation (DFF)",
         "themAgain"
-      ]
+      ],
+      "hoursPast7Days": 29.5
     },
     {
       "id": 89,
@@ -27752,32 +27763,8 @@
       "projectNamesPast7Days": [
         "Dubai Economy & Tourism (DET)",
         "Emirates Foundation"
-      ]
-    },
-    {
-      "id": 75,
-      "name": "Yara Saleh Mustafa Hijazi",
-      "projectsPast7Days": 2,
-      "projectNamesPast7Days": [
-        "Dubai Future Foundation (DFF)",
-        "themAgain"
-      ]
-    },
-    {
-      "id": 6,
-      "name": "Amal Marwan Abdulhameed Khader",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "Oil Sustainability Program"
-      ]
-    },
-    {
-      "id": 8,
-      "name": "Amani Fadi Ali Mahmoud",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "KAUST (King Abdullah University of Science and Technology)"
-      ]
+      ],
+      "hoursPast7Days": 7
     },
     {
       "id": 223,
@@ -27785,103 +27772,17 @@
       "projectsPast7Days": 1,
       "projectNamesPast7Days": [
         "KAUST (King Abdullah University of Science and Technology)"
-      ]
+      ],
+      "hoursPast7Days": 312
     },
     {
-      "id": 13,
-      "name": "Christian Leimark Villa",
+      "id": 8,
+      "name": "Amani Fadi Ali Mahmoud",
       "projectsPast7Days": 1,
       "projectNamesPast7Days": [
-        "Dubai Future Foundation (DFF)"
-      ]
-    },
-    {
-      "id": 21,
-      "name": "Farah Khalil Atieh Shehadeh",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "Dubai Future Foundation (DFF)"
-      ]
-    },
-    {
-      "id": 240,
-      "name": "Issam Abdalla Abdal-Raouf Hijjawi",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "themAgain"
-      ]
-    },
-    {
-      "id": 35,
-      "name": "Leen Yasser Moh'd Okasha",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "Dubai Future Foundation (DFF)"
-      ]
-    },
-    {
-      "id": 40,
-      "name": "Marah Radi Ahmad Tuffaha",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "Abdul Latif Jameel Enterprise"
-      ]
-    },
-    {
-      "id": 48,
-      "name": "Naji Fawwaz Naji Abbadi",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "Abu Dhabi Media Office (ADMO)"
-      ]
-    },
-    {
-      "id": 173,
-      "name": "Nour Rami Fraih Al Karadsheh",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "Eagle Environmental Services and Pest Control"
-      ]
-    },
-    {
-      "id": 56,
-      "name": "Rand Hussein Abdel-Rahman Ababneh",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "International Holding Company (IHC)"
-      ]
-    },
-    {
-      "id": 59,
-      "name": "Rayyan Azzam Ahmad Najim",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "International Holding Company (IHC)"
-      ]
-    },
-    {
-      "id": 170,
-      "name": "Sama Alaa Hafez Hassoun",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "Dubai Future Foundation (DFF)"
-      ]
-    },
-    {
-      "id": 68,
-      "name": "Sarah Riad Moh'drifat Hanbali",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "Richemont"
-      ]
-    },
-    {
-      "id": 69,
-      "name": "Sunjana Premica Sundara Raj",
-      "projectsPast7Days": 1,
-      "projectNamesPast7Days": [
-        "Eagle Environmental Services and Pest Control"
-      ]
+        "KAUST (King Abdullah University of Science and Technology)"
+      ],
+      "hoursPast7Days": 309
     },
     {
       "id": 219,
@@ -27889,7 +27790,44 @@
       "projectsPast7Days": 1,
       "projectNamesPast7Days": [
         "themAgain"
-      ]
+      ],
+      "hoursPast7Days": 48
+    },
+    {
+      "id": 56,
+      "name": "Rand Hussein Abdel-Rahman Ababneh",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "International Holding Company (IHC)"
+      ],
+      "hoursPast7Days": 46.17
+    },
+    {
+      "id": 6,
+      "name": "Amal Marwan Abdulhameed Khader",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "Oil Sustainability Program"
+      ],
+      "hoursPast7Days": 40
+    },
+    {
+      "id": 21,
+      "name": "Farah Khalil Atieh Shehadeh",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "Dubai Future Foundation (DFF)"
+      ],
+      "hoursPast7Days": 40
+    },
+    {
+      "id": 240,
+      "name": "Issam Abdalla Abdal-Raouf Hijjawi",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "themAgain"
+      ],
+      "hoursPast7Days": 40
     },
     {
       "id": 78,
@@ -27897,349 +27835,1682 @@
       "projectsPast7Days": 1,
       "projectNamesPast7Days": [
         "Oil Sustainability Program"
-      ]
+      ],
+      "hoursPast7Days": 40
+    },
+    {
+      "id": 13,
+      "name": "Christian Leimark Villa",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "Dubai Future Foundation (DFF)"
+      ],
+      "hoursPast7Days": 34
+    },
+    {
+      "id": 59,
+      "name": "Rayyan Azzam Ahmad Najim",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "International Holding Company (IHC)"
+      ],
+      "hoursPast7Days": 32
+    },
+    {
+      "id": 170,
+      "name": "Sama Alaa Hafez Hassoun",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "Dubai Future Foundation (DFF)"
+      ],
+      "hoursPast7Days": 32
+    },
+    {
+      "id": 40,
+      "name": "Marah Radi Ahmad Tuffaha",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "Abdul Latif Jameel Enterprise"
+      ],
+      "hoursPast7Days": 30
+    },
+    {
+      "id": 68,
+      "name": "Sarah Riad Moh'drifat Hanbali",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "Richemont"
+      ],
+      "hoursPast7Days": 25.08
+    },
+    {
+      "id": 48,
+      "name": "Naji Fawwaz Naji Abbadi",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "Abu Dhabi Media Office (ADMO)"
+      ],
+      "hoursPast7Days": 24
+    },
+    {
+      "id": 69,
+      "name": "Sunjana Premica Sundara Raj",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "Eagle Environmental Services and Pest Control"
+      ],
+      "hoursPast7Days": 24
+    },
+    {
+      "id": 35,
+      "name": "Leen Yasser Moh'd Okasha",
+      "projectsPast7Days": 1,
+      "projectNamesPast7Days": [
+        "Dubai Future Foundation (DFF)"
+      ],
+      "hoursPast7Days": 10
     },
     {
       "id": 79,
       "name": "Abdallah Majdi Fahmi AlShahrouri",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 246,
-      "name": "Abeer Abdullah Mohamed Al Zoubi",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 5,
       "name": "Alia Haitham Halaweh",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 3,
       "name": "Alia Hatim A. Alshalbi",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 4,
       "name": "Alia Osama Salim Dabouqi",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 204,
-      "name": "Anat Abdulhamid Abbas Hawari",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 10,
       "name": "Aseel Faisal Hussein Abu Hana",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
-      "id": 218,
-      "name": "Aseel Mustafa Yacoub Kharroub",
+      "id": 203,
+      "name": "Badan Suleiman Abdel Karim Abu Seir",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
-      "id": 11,
-      "name": "Aseel Othman Ahmed Quzmar",
+      "id": 156,
+      "name": "Besan Rasmi Ahmad Albadawi",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 251,
-      "name": "Aya Ala'a Kazem Arafat",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 92,
-      "name": "Bana Bilal Nathem Hammad",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 86,
-      "name": "Basheer Bassam Ahmed Anani",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 224,
-      "name": "Belal Ghalib Mohammad Al-Surri",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 234,
       "name": "Camille Angeli Mesa Patria",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
+    },
+    {
+      "id": 150,
+      "name": "Cilen AlBorom",
+      "projectsPast7Days": 0,
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 15,
       "name": "Dana Nawaf Salameh El-Younes",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 16,
       "name": "Dana Wael Kamal Zahran",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 229,
       "name": "Dima Nidal Rashrash Alkhazaeleh",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 18,
       "name": "Dina Hazem Rasem Asfour",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
-      "id": 217,
-      "name": "Farah Anton Samir Saad",
+      "id": 17,
+      "name": "Dina Khalil Mahmoud Almajali",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 93,
       "name": "Farah Mohammad SH. Hdaib",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 24,
       "name": "Hala Shaker Ibrahim Younes",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 100,
       "name": "Hala Zuhier Abdelhadi Alfayoumi",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 254,
-      "name": "Hamza Nemer Abdel Rahman Albitar",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 108,
       "name": "Hamzeh Hani Mohd Khair Alaydi",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 88,
       "name": "Hana Hisham Salim Hawari",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 196,
       "name": "Ibrahim Majdi Abed Alhaleem Alalul",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 27,
       "name": "Jann Ray Romulo Depon Javier",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 247,
-      "name": "Jenan Suhail Suleiman Al-Najar",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 252,
-      "name": "Khair Eddin Ali Yahia Nabas",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 32,
-      "name": "Leen Abdel Hafez Ahmad Alnubani",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 33,
       "name": "Leen Abdel Razzaq Ali Alzu'bi",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 31,
       "name": "Leen Izz Mo'ath Akkad",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 101,
       "name": "Lujain Wa'el Ibrahim Shahin",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 39,
-      "name": "Mais Husni Mohammad Tafesh",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 181,
       "name": "Malik Nabil Ibrahim Khamis",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
+    },
+    {
+      "id": 41,
+      "name": "Mariam Ahmad Mahmoud Qadadeh",
+      "projectsPast7Days": 0,
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
+    },
+    {
+      "id": 233,
+      "name": "Mariam Ahmed Mohamed Abdulelfattah Gomaa",
+      "projectsPast7Days": 0,
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 163,
       "name": "Mariam Mohamed Ramzy Refaat Abouelenein",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
+    },
+    {
+      "id": 182,
+      "name": "Mariam Suhail Salim Alshaer",
+      "projectsPast7Days": 0,
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
+    },
+    {
+      "id": 44,
+      "name": "Mohammad Jamil Ahmad Masa'd",
+      "projectsPast7Days": 0,
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 228,
       "name": "Nadeen Nader Mohammad Rashad Umair",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 197,
       "name": "Nicole Daniel Antoine Dib",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
+    },
+    {
+      "id": 49,
+      "name": "Nicole Jan Soledad Cabahit",
+      "projectsPast7Days": 0,
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
+    },
+    {
+      "id": 194,
+      "name": "Noor Hasan Mahmoud Masoud",
+      "projectsPast7Days": 0,
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 51,
       "name": "Nour Amjad Fayeq Halawa",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 248,
-      "name": "Nour Emad Moh'd Said Qawwas",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 50,
       "name": "Nour Khaled Suleiman Ammar",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
-      "id": 53,
-      "name": "Oubai Hani AlJaafari",
+      "id": 52,
+      "name": "Omar Nawwaf Kalaf Al-Amery",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 55,
       "name": "Raghad Mohammd Zaid Mohammad Osama Alwazan",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 54,
       "name": "Raghad Walid Naim Al-Sayed Ahmad",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 58,
-      "name": "Rania Abdel Mon'em Qasim Samara",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 60,
-      "name": "Razan Issa Ibrahim Fakhoury",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 61,
       "name": "Reem Jawad Moh’d Khier Alzubi",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
-      "id": 186,
-      "name": "Sandra Hassan Mohamed Dajani",
+      "id": 66,
+      "name": "Sara Haytham Nassim Alsawalha",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 67,
       "name": "Sara Sadek (M. N.) Shunnar",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 183,
       "name": "Sara Sulieman Omar Elashqar",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
+    },
+    {
+      "id": 107,
+      "name": "Shahad Mohammed M Alharthani",
+      "projectsPast7Days": 0,
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 90,
       "name": "Shilpa Vasudevan",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
-    },
-    {
-      "id": 253,
-      "name": "Tala Nizar Michel Zahran",
-      "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 71,
       "name": "Tala Saleh Mustafa Hijazi",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 96,
       "name": "Tanya M. Amin Abdal Qader Shteawi",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
+    },
+    {
+      "id": 72,
+      "name": "Tuleen Zaid Maher Kirresh",
+      "projectsPast7Days": 0,
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 155,
       "name": "Waleed Khaleel Fareed Khaleel",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
       "id": 74,
       "name": "Yara Faisal Subhi Abukhalil",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     },
     {
-      "id": 172,
-      "name": "Yara Reda Zakaria Awwad",
+      "id": 185,
+      "name": "Zain Atallah Zaki Sarhan",
       "projectsPast7Days": 0,
-      "projectNamesPast7Days": []
+      "projectNamesPast7Days": [],
+      "hoursPast7Days": 0
     }
-  ]
+  ],
+  "designerAvailabilityByMarket": {
+    "all": [
+      {
+        "id": 75,
+        "name": "Yara Saleh Mustafa Hijazi",
+        "projectsPast7Days": 2,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)",
+          "themAgain"
+        ],
+        "hoursPast7Days": 35.5
+      },
+      {
+        "id": 25,
+        "name": "Haneen Yousef Ahmad Albarbarawi",
+        "projectsPast7Days": 2,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)",
+          "themAgain"
+        ],
+        "hoursPast7Days": 29.5
+      },
+      {
+        "id": 89,
+        "name": "Reham Bassam Abed Alfattah Alazzeh",
+        "projectsPast7Days": 2,
+        "projectNamesPast7Days": [
+          "Dubai Economy & Tourism (DET)",
+          "Emirates Foundation"
+        ],
+        "hoursPast7Days": 7
+      },
+      {
+        "id": 223,
+        "name": "Aseel Osama Ibrahim Tuhul",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "KAUST (King Abdullah University of Science and Technology)"
+        ],
+        "hoursPast7Days": 312
+      },
+      {
+        "id": 8,
+        "name": "Amani Fadi Ali Mahmoud",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "KAUST (King Abdullah University of Science and Technology)"
+        ],
+        "hoursPast7Days": 309
+      },
+      {
+        "id": 219,
+        "name": "Tala Nizam Qasem Hasan",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "themAgain"
+        ],
+        "hoursPast7Days": 48
+      },
+      {
+        "id": 56,
+        "name": "Rand Hussein Abdel-Rahman Ababneh",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "International Holding Company (IHC)"
+        ],
+        "hoursPast7Days": 46.17
+      },
+      {
+        "id": 6,
+        "name": "Amal Marwan Abdulhameed Khader",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Oil Sustainability Program"
+        ],
+        "hoursPast7Days": 40
+      },
+      {
+        "id": 21,
+        "name": "Farah Khalil Atieh Shehadeh",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)"
+        ],
+        "hoursPast7Days": 40
+      },
+      {
+        "id": 240,
+        "name": "Issam Abdalla Abdal-Raouf Hijjawi",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "themAgain"
+        ],
+        "hoursPast7Days": 40
+      },
+      {
+        "id": 78,
+        "name": "Zaineh Qasem Mohammad AlHamouri",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Oil Sustainability Program"
+        ],
+        "hoursPast7Days": 40
+      },
+      {
+        "id": 13,
+        "name": "Christian Leimark Villa",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)"
+        ],
+        "hoursPast7Days": 34
+      },
+      {
+        "id": 59,
+        "name": "Rayyan Azzam Ahmad Najim",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "International Holding Company (IHC)"
+        ],
+        "hoursPast7Days": 32
+      },
+      {
+        "id": 170,
+        "name": "Sama Alaa Hafez Hassoun",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)"
+        ],
+        "hoursPast7Days": 32
+      },
+      {
+        "id": 40,
+        "name": "Marah Radi Ahmad Tuffaha",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Abdul Latif Jameel Enterprise"
+        ],
+        "hoursPast7Days": 30
+      },
+      {
+        "id": 68,
+        "name": "Sarah Riad Moh'drifat Hanbali",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Richemont"
+        ],
+        "hoursPast7Days": 25.08
+      },
+      {
+        "id": 48,
+        "name": "Naji Fawwaz Naji Abbadi",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Abu Dhabi Media Office (ADMO)"
+        ],
+        "hoursPast7Days": 24
+      },
+      {
+        "id": 69,
+        "name": "Sunjana Premica Sundara Raj",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Eagle Environmental Services and Pest Control"
+        ],
+        "hoursPast7Days": 24
+      },
+      {
+        "id": 35,
+        "name": "Leen Yasser Moh'd Okasha",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)"
+        ],
+        "hoursPast7Days": 10
+      },
+      {
+        "id": 79,
+        "name": "Abdallah Majdi Fahmi AlShahrouri",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 5,
+        "name": "Alia Haitham Halaweh",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 3,
+        "name": "Alia Hatim A. Alshalbi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 4,
+        "name": "Alia Osama Salim Dabouqi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 10,
+        "name": "Aseel Faisal Hussein Abu Hana",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 203,
+        "name": "Badan Suleiman Abdel Karim Abu Seir",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 156,
+        "name": "Besan Rasmi Ahmad Albadawi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 234,
+        "name": "Camille Angeli Mesa Patria",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 150,
+        "name": "Cilen AlBorom",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 15,
+        "name": "Dana Nawaf Salameh El-Younes",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 16,
+        "name": "Dana Wael Kamal Zahran",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 229,
+        "name": "Dima Nidal Rashrash Alkhazaeleh",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 18,
+        "name": "Dina Hazem Rasem Asfour",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 17,
+        "name": "Dina Khalil Mahmoud Almajali",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 93,
+        "name": "Farah Mohammad SH. Hdaib",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 24,
+        "name": "Hala Shaker Ibrahim Younes",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 100,
+        "name": "Hala Zuhier Abdelhadi Alfayoumi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 108,
+        "name": "Hamzeh Hani Mohd Khair Alaydi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 88,
+        "name": "Hana Hisham Salim Hawari",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 196,
+        "name": "Ibrahim Majdi Abed Alhaleem Alalul",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 27,
+        "name": "Jann Ray Romulo Depon Javier",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 33,
+        "name": "Leen Abdel Razzaq Ali Alzu'bi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 31,
+        "name": "Leen Izz Mo'ath Akkad",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 101,
+        "name": "Lujain Wa'el Ibrahim Shahin",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 181,
+        "name": "Malik Nabil Ibrahim Khamis",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 41,
+        "name": "Mariam Ahmad Mahmoud Qadadeh",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 233,
+        "name": "Mariam Ahmed Mohamed Abdulelfattah Gomaa",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 163,
+        "name": "Mariam Mohamed Ramzy Refaat Abouelenein",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 182,
+        "name": "Mariam Suhail Salim Alshaer",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 44,
+        "name": "Mohammad Jamil Ahmad Masa'd",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 228,
+        "name": "Nadeen Nader Mohammad Rashad Umair",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 197,
+        "name": "Nicole Daniel Antoine Dib",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 49,
+        "name": "Nicole Jan Soledad Cabahit",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 194,
+        "name": "Noor Hasan Mahmoud Masoud",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 51,
+        "name": "Nour Amjad Fayeq Halawa",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 50,
+        "name": "Nour Khaled Suleiman Ammar",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 52,
+        "name": "Omar Nawwaf Kalaf Al-Amery",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 55,
+        "name": "Raghad Mohammd Zaid Mohammad Osama Alwazan",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 54,
+        "name": "Raghad Walid Naim Al-Sayed Ahmad",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 61,
+        "name": "Reem Jawad Moh’d Khier Alzubi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 66,
+        "name": "Sara Haytham Nassim Alsawalha",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 67,
+        "name": "Sara Sadek (M. N.) Shunnar",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 183,
+        "name": "Sara Sulieman Omar Elashqar",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 107,
+        "name": "Shahad Mohammed M Alharthani",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 90,
+        "name": "Shilpa Vasudevan",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 71,
+        "name": "Tala Saleh Mustafa Hijazi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 96,
+        "name": "Tanya M. Amin Abdal Qader Shteawi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 72,
+        "name": "Tuleen Zaid Maher Kirresh",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 155,
+        "name": "Waleed Khaleel Fareed Khaleel",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 74,
+        "name": "Yara Faisal Subhi Abukhalil",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 185,
+        "name": "Zain Atallah Zaki Sarhan",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      }
+    ],
+    "uae": [
+      {
+        "id": 75,
+        "name": "Yara Saleh Mustafa Hijazi",
+        "projectsPast7Days": 2,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)",
+          "themAgain"
+        ],
+        "hoursPast7Days": 35.5
+      },
+      {
+        "id": 25,
+        "name": "Haneen Yousef Ahmad Albarbarawi",
+        "projectsPast7Days": 2,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)",
+          "themAgain"
+        ],
+        "hoursPast7Days": 29.5
+      },
+      {
+        "id": 89,
+        "name": "Reham Bassam Abed Alfattah Alazzeh",
+        "projectsPast7Days": 2,
+        "projectNamesPast7Days": [
+          "Dubai Economy & Tourism (DET)",
+          "Emirates Foundation"
+        ],
+        "hoursPast7Days": 7
+      },
+      {
+        "id": 219,
+        "name": "Tala Nizam Qasem Hasan",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "themAgain"
+        ],
+        "hoursPast7Days": 48
+      },
+      {
+        "id": 56,
+        "name": "Rand Hussein Abdel-Rahman Ababneh",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "International Holding Company (IHC)"
+        ],
+        "hoursPast7Days": 46.17
+      },
+      {
+        "id": 21,
+        "name": "Farah Khalil Atieh Shehadeh",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)"
+        ],
+        "hoursPast7Days": 40
+      },
+      {
+        "id": 240,
+        "name": "Issam Abdalla Abdal-Raouf Hijjawi",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "themAgain"
+        ],
+        "hoursPast7Days": 40
+      },
+      {
+        "id": 13,
+        "name": "Christian Leimark Villa",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)"
+        ],
+        "hoursPast7Days": 34
+      },
+      {
+        "id": 59,
+        "name": "Rayyan Azzam Ahmad Najim",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "International Holding Company (IHC)"
+        ],
+        "hoursPast7Days": 32
+      },
+      {
+        "id": 170,
+        "name": "Sama Alaa Hafez Hassoun",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)"
+        ],
+        "hoursPast7Days": 32
+      },
+      {
+        "id": 68,
+        "name": "Sarah Riad Moh'drifat Hanbali",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Richemont"
+        ],
+        "hoursPast7Days": 25.08
+      },
+      {
+        "id": 48,
+        "name": "Naji Fawwaz Naji Abbadi",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Abu Dhabi Media Office (ADMO)"
+        ],
+        "hoursPast7Days": 24
+      },
+      {
+        "id": 69,
+        "name": "Sunjana Premica Sundara Raj",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Eagle Environmental Services and Pest Control"
+        ],
+        "hoursPast7Days": 24
+      },
+      {
+        "id": 35,
+        "name": "Leen Yasser Moh'd Okasha",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Dubai Future Foundation (DFF)"
+        ],
+        "hoursPast7Days": 10
+      },
+      {
+        "id": 79,
+        "name": "Abdallah Majdi Fahmi AlShahrouri",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 5,
+        "name": "Alia Haitham Halaweh",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 3,
+        "name": "Alia Hatim A. Alshalbi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 6,
+        "name": "Amal Marwan Abdulhameed Khader",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 8,
+        "name": "Amani Fadi Ali Mahmoud",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 10,
+        "name": "Aseel Faisal Hussein Abu Hana",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 203,
+        "name": "Badan Suleiman Abdel Karim Abu Seir",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 156,
+        "name": "Besan Rasmi Ahmad Albadawi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 234,
+        "name": "Camille Angeli Mesa Patria",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 150,
+        "name": "Cilen AlBorom",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 18,
+        "name": "Dina Hazem Rasem Asfour",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 17,
+        "name": "Dina Khalil Mahmoud Almajali",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 93,
+        "name": "Farah Mohammad SH. Hdaib",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 24,
+        "name": "Hala Shaker Ibrahim Younes",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 100,
+        "name": "Hala Zuhier Abdelhadi Alfayoumi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 88,
+        "name": "Hana Hisham Salim Hawari",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 196,
+        "name": "Ibrahim Majdi Abed Alhaleem Alalul",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 27,
+        "name": "Jann Ray Romulo Depon Javier",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 33,
+        "name": "Leen Abdel Razzaq Ali Alzu'bi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 31,
+        "name": "Leen Izz Mo'ath Akkad",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 101,
+        "name": "Lujain Wa'el Ibrahim Shahin",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 181,
+        "name": "Malik Nabil Ibrahim Khamis",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 40,
+        "name": "Marah Radi Ahmad Tuffaha",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 233,
+        "name": "Mariam Ahmed Mohamed Abdulelfattah Gomaa",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 163,
+        "name": "Mariam Mohamed Ramzy Refaat Abouelenein",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 182,
+        "name": "Mariam Suhail Salim Alshaer",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 44,
+        "name": "Mohammad Jamil Ahmad Masa'd",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 228,
+        "name": "Nadeen Nader Mohammad Rashad Umair",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 197,
+        "name": "Nicole Daniel Antoine Dib",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 49,
+        "name": "Nicole Jan Soledad Cabahit",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 51,
+        "name": "Nour Amjad Fayeq Halawa",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 50,
+        "name": "Nour Khaled Suleiman Ammar",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 52,
+        "name": "Omar Nawwaf Kalaf Al-Amery",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 54,
+        "name": "Raghad Walid Naim Al-Sayed Ahmad",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 61,
+        "name": "Reem Jawad Moh’d Khier Alzubi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 66,
+        "name": "Sara Haytham Nassim Alsawalha",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 90,
+        "name": "Shilpa Vasudevan",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 71,
+        "name": "Tala Saleh Mustafa Hijazi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 96,
+        "name": "Tanya M. Amin Abdal Qader Shteawi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 74,
+        "name": "Yara Faisal Subhi Abukhalil",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 185,
+        "name": "Zain Atallah Zaki Sarhan",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      }
+    ],
+    "ksa": [
+      {
+        "id": 223,
+        "name": "Aseel Osama Ibrahim Tuhul",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "KAUST (King Abdullah University of Science and Technology)"
+        ],
+        "hoursPast7Days": 312
+      },
+      {
+        "id": 8,
+        "name": "Amani Fadi Ali Mahmoud",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "KAUST (King Abdullah University of Science and Technology)"
+        ],
+        "hoursPast7Days": 309
+      },
+      {
+        "id": 6,
+        "name": "Amal Marwan Abdulhameed Khader",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Oil Sustainability Program"
+        ],
+        "hoursPast7Days": 40
+      },
+      {
+        "id": 78,
+        "name": "Zaineh Qasem Mohammad AlHamouri",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Oil Sustainability Program"
+        ],
+        "hoursPast7Days": 40
+      },
+      {
+        "id": 40,
+        "name": "Marah Radi Ahmad Tuffaha",
+        "projectsPast7Days": 1,
+        "projectNamesPast7Days": [
+          "Abdul Latif Jameel Enterprise"
+        ],
+        "hoursPast7Days": 30
+      },
+      {
+        "id": 79,
+        "name": "Abdallah Majdi Fahmi AlShahrouri",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 5,
+        "name": "Alia Haitham Halaweh",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 3,
+        "name": "Alia Hatim A. Alshalbi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 4,
+        "name": "Alia Osama Salim Dabouqi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 10,
+        "name": "Aseel Faisal Hussein Abu Hana",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 234,
+        "name": "Camille Angeli Mesa Patria",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 150,
+        "name": "Cilen AlBorom",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 15,
+        "name": "Dana Nawaf Salameh El-Younes",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 16,
+        "name": "Dana Wael Kamal Zahran",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 229,
+        "name": "Dima Nidal Rashrash Alkhazaeleh",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 93,
+        "name": "Farah Mohammad SH. Hdaib",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 108,
+        "name": "Hamzeh Hani Mohd Khair Alaydi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 25,
+        "name": "Haneen Yousef Ahmad Albarbarawi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 196,
+        "name": "Ibrahim Majdi Abed Alhaleem Alalul",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 27,
+        "name": "Jann Ray Romulo Depon Javier",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 33,
+        "name": "Leen Abdel Razzaq Ali Alzu'bi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 31,
+        "name": "Leen Izz Mo'ath Akkad",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 181,
+        "name": "Malik Nabil Ibrahim Khamis",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 41,
+        "name": "Mariam Ahmad Mahmoud Qadadeh",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 163,
+        "name": "Mariam Mohamed Ramzy Refaat Abouelenein",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 48,
+        "name": "Naji Fawwaz Naji Abbadi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 194,
+        "name": "Noor Hasan Mahmoud Masoud",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 50,
+        "name": "Nour Khaled Suleiman Ammar",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 52,
+        "name": "Omar Nawwaf Kalaf Al-Amery",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 55,
+        "name": "Raghad Mohammd Zaid Mohammad Osama Alwazan",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 54,
+        "name": "Raghad Walid Naim Al-Sayed Ahmad",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 56,
+        "name": "Rand Hussein Abdel-Rahman Ababneh",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 170,
+        "name": "Sama Alaa Hafez Hassoun",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 67,
+        "name": "Sara Sadek (M. N.) Shunnar",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 183,
+        "name": "Sara Sulieman Omar Elashqar",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 107,
+        "name": "Shahad Mohammed M Alharthani",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 96,
+        "name": "Tanya M. Amin Abdal Qader Shteawi",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 72,
+        "name": "Tuleen Zaid Maher Kirresh",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 155,
+        "name": "Waleed Khaleel Fareed Khaleel",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      },
+      {
+        "id": 74,
+        "name": "Yara Faisal Subhi Abukhalil",
+        "projectsPast7Days": 0,
+        "projectNamesPast7Days": [],
+        "hoursPast7Days": 0
+      }
+    ]
+  }
 }

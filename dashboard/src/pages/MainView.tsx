@@ -326,7 +326,6 @@ export function MainView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
     <AppShell
       wide
       title="Main Project View"
-      description="Live pull of parent project tasks from Odoo with every required column normalized for the table experience shown in the reference."
       actions={
         <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
           {viewSwitcher}
@@ -339,7 +338,7 @@ export function MainView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
         </div>
       }
     >
-      <section className="space-y-4" style={{ ['--filters-offset' as string]: '64px' }}>
+      <section className="space-y-2" style={{ ['--filters-offset' as string]: '64px' }}>
         <div className="overflow-x-auto overflow-y-auto rounded-[20px] border border-divider bg-white shadow-sm max-h-[calc(100vh-220px)]">
             <table className="min-w-[2100px] table-fixed border-collapse">
               <thead className="sticky top-0 z-40 bg-[#f9fafc] text-left text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-400 shadow-[0_1px_0_0_#eceff3]">

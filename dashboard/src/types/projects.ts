@@ -54,5 +54,29 @@ export type OdooSnapshot = {
     name: string;
     projectsPast7Days: number;
     projectNamesPast7Days: string[];
+    hoursPast7Days?: number;
   }[];
+  designerAvailabilityByMarket?: {
+    all: {
+      id: number;
+      name: string;
+      projectsPast7Days: number;
+      projectNamesPast7Days: string[];
+      hoursPast7Days?: number;
+    }[];
+    uae: {
+      id: number;
+      name: string;
+      projectsPast7Days: number;
+      projectNamesPast7Days: string[];
+      hoursPast7Days?: number;
+    }[];
+    ksa: {
+      id: number;
+      name: string;
+      projectsPast7Days: number;
+      projectNamesPast7Days: string[];
+      hoursPast7Days?: number;
+    }[];
+  };
 };

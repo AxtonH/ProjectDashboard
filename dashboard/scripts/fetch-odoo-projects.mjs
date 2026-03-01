@@ -54,7 +54,7 @@ const planningSlotFields = [
   'start_datetime',
   'end_datetime',
 ];
-const planningAvailabilityFields = ['project_id', 'resource_id', 'role_id', 'start_datetime', 'end_datetime'];
+const planningAvailabilityFields = ['project_id', 'resource_id', 'role_id', 'start_datetime', 'end_datetime', 'allocated_hours'];
 const employeeFields = ['name', 'resource_id', 'department_id', 'active'];
 const projectTagFields = ['name'];
 
@@ -493,30 +493,35 @@ function overlapsWindow(start, end, windowStart, windowEnd) {
   return false;
 }
 
-function buildCreativeAvailability(planningSlots, creativeEmployees, allowedProjectIds) {
+function buildCreativeAvailability(planningSlots, projectMap, allowedProjectIds, marketFilter = 'all') {
   const now = Date.now();
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
   const windowStart = now - sevenDaysMs;
   const windowEnd = now;
   const map = new Map();
 
-  for (const employee of creativeEmployees) {
-    const resourceId = employee.resource_id?.[0];
-    if (!resourceId) continue;
-
-    map.set(resourceId, {
-      id: resourceId,
-      name: employee.name ?? employee.resource_id?.[1] ?? 'Unknown',
-      projectsPast7Days: new Set(),
-    });
-  }
-
   for (const slot of planningSlots) {
     const projectId = slot.project_id?.[0];
     if (!projectId || !allowedProjectIds.has(projectId)) continue;
+    const roleName = slot.role_id?.[1]?.trim() ?? '';
+    if (!isDesignerRole(roleName)) continue;
+
+    const projectRecord = projectMap.get(projectId);
+    const projectMarket = projectRecord?.x_studio_market_2?.[1]?.trim().toUpperCase() ?? '';
+    if (marketFilter !== 'all' && !projectMarket.includes(marketFilter)) continue;
 
     const resourceId = slot.resource_id?.[0];
-    if (!resourceId || !map.has(resourceId)) continue;
+    const resourceName = slot.resource_id?.[1] ?? 'Unknown';
+    if (!resourceId) continue;
+
+    if (!map.has(resourceId)) {
+      map.set(resourceId, {
+        id: resourceId,
+        name: resourceName,
+        projectsPast7Days: new Set(),
+        hoursPast7Days: 0,
+      });
+    }
 
     const start = parseDate(slot.start_datetime ?? null);
     const end = parseDate(slot.end_datetime ?? null);
@@ -529,6 +534,10 @@ function buildCreativeAvailability(planningSlots, creativeEmployees, allowedProj
     if (projectName) {
       map.get(resourceId).projectsPast7Days.add(projectName);
     }
+    const allocatedHours = Number(slot.allocated_hours ?? 0);
+    if (Number.isFinite(allocatedHours) && allocatedHours > 0) {
+      map.get(resourceId).hoursPast7Days += allocatedHours;
+    }
   }
 
   return Array.from(map.values())
@@ -537,10 +546,14 @@ function buildCreativeAvailability(planningSlots, creativeEmployees, allowedProj
       name: entry.name,
       projectsPast7Days: entry.projectsPast7Days.size,
       projectNamesPast7Days: Array.from(entry.projectsPast7Days).sort((a, b) => a.localeCompare(b)),
+      hoursPast7Days: Number(entry.hoursPast7Days.toFixed(2)),
     }))
     .sort((a, b) => {
       if (b.projectsPast7Days !== a.projectsPast7Days) {
         return b.projectsPast7Days - a.projectsPast7Days;
+      }
+      if (b.hoursPast7Days !== a.hoursPast7Days) {
+        return b.hoursPast7Days - a.hoursPast7Days;
       }
       return a.name.localeCompare(b.name);
     });
@@ -684,10 +697,23 @@ async function main() {
       isDesignerRole,
       (slot) => slot.x_studio_parent_task?.[0] ?? null,
     );
-    const designerAvailability = buildCreativeAvailability(
+    const designerAvailabilityAll = buildCreativeAvailability(
       availabilitySlots,
-      creativeEmployees,
+      projectMap,
       allowedProjectIds,
+      'all',
+    );
+    const designerAvailabilityUAE = buildCreativeAvailability(
+      availabilitySlots,
+      projectMap,
+      allowedProjectIds,
+      'UAE',
+    );
+    const designerAvailabilityKSA = buildCreativeAvailability(
+      availabilitySlots,
+      projectMap,
+      allowedProjectIds,
+      'KSA',
     );
 
     const normalized = normalizeTasks(
@@ -714,11 +740,16 @@ async function main() {
             users: users.length,
             planningSlots: planningSlots.length,
             planningSlotsAvailability: availabilitySlots.length,
-            designerCards: designerAvailability.length,
+            designerCards: designerAvailabilityAll.length,
             creativeEmployees: creativeEmployees.length,
           },
           rows: normalized,
-          designerAvailability,
+          designerAvailability: designerAvailabilityAll,
+          designerAvailabilityByMarket: {
+            all: designerAvailabilityAll,
+            uae: designerAvailabilityUAE,
+            ksa: designerAvailabilityKSA,
+          },
         },
         null,
         2,

@@ -10,6 +10,7 @@ type PersonAvailability = {
   id: number;
   name: string;
   projectsThisWeek: number;
+  hoursThisWeek: number;
   workload: WorkloadLabel;
   projects: string[];
 };
@@ -72,6 +73,19 @@ export function AvailabilityView({
   const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [marketFilter]);
 
   const availabilityCards = useMemo<PersonAvailability[]>(() => {
+    const marketKey = marketFilter === 'UAE' ? 'uae' : (marketFilter === 'KSA' ? 'ksa' : 'all');
+    const sourceCards = snapshot.designerAvailabilityByMarket?.[marketKey] ?? snapshot.designerAvailability ?? [];
+    if (sourceCards.length > 0) {
+      return sourceCards.map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        projectsThisWeek: entry.projectsPast7Days,
+        hoursThisWeek: Number(entry.hoursPast7Days ?? 0),
+        projects: entry.projectNamesPast7Days,
+        workload: getWorkload(entry.projectsPast7Days),
+      }));
+    }
+
     const map = new Map<number, { id: number; name: string; projects: Set<string> }>();
     for (const row of marketRows) {
       const designers = (row.designers ?? []).length > 0 ? (row.designers ?? []) : (row.designer ? [row.designer] : []);
@@ -91,6 +105,7 @@ export function AvailabilityView({
         id: entry.id,
         name: entry.name,
         projectsThisWeek: entry.projects.size,
+        hoursThisWeek: 0,
         projects: Array.from(entry.projects).sort((a, b) => a.localeCompare(b)),
         workload: getWorkload(entry.projects.size),
       }))
@@ -136,6 +151,9 @@ export function AvailabilityView({
               <h2 className="mt-1 text-base font-bold leading-tight">{person.name}</h2>
               <p className="mt-2 text-sm font-semibold">
                 Projects this week: <span className="text-lg">{person.projectsThisWeek}</span>
+              </p>
+              <p className="mt-1 text-sm font-semibold">
+                Hours this week: <span className="text-lg">{person.hoursThisWeek.toFixed(1)}</span>
               </p>
               <p className="mt-1 text-sm font-bold">{person.workload}</p>
               <p className="mt-3 line-clamp-2 text-xs opacity-85">
