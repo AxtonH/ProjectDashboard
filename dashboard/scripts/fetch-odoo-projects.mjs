@@ -493,6 +493,27 @@ function overlapsWindow(start, end, windowStart, windowEnd) {
   return false;
 }
 
+function prorateHoursToWindow(allocatedHours, start, end, windowStart, windowEnd) {
+  if (!Number.isFinite(allocatedHours) || allocatedHours <= 0) {
+    return 0;
+  }
+
+  // If timing is incomplete or invalid, keep legacy behavior and count full slot hours.
+  if (start === null || end === null || end <= start) {
+    return allocatedHours;
+  }
+
+  const overlapStart = Math.max(start, windowStart);
+  const overlapEnd = Math.min(end, windowEnd);
+  const overlapMs = Math.max(0, overlapEnd - overlapStart);
+  if (overlapMs <= 0) {
+    return 0;
+  }
+
+  const totalMs = end - start;
+  return allocatedHours * (overlapMs / totalMs);
+}
+
 function buildCreativeAvailability(planningSlots, projectMap, allowedProjectIds, marketFilter = 'all') {
   const now = Date.now();
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
@@ -535,8 +556,9 @@ function buildCreativeAvailability(planningSlots, projectMap, allowedProjectIds,
       map.get(resourceId).projectsPast7Days.add(projectName);
     }
     const allocatedHours = Number(slot.allocated_hours ?? 0);
-    if (Number.isFinite(allocatedHours) && allocatedHours > 0) {
-      map.get(resourceId).hoursPast7Days += allocatedHours;
+    const proratedHours = prorateHoursToWindow(allocatedHours, start, end, windowStart, windowEnd);
+    if (proratedHours > 0) {
+      map.get(resourceId).hoursPast7Days += proratedHours;
     }
   }
 
