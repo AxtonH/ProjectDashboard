@@ -589,6 +589,7 @@ function normalizeTasks(
   projectSaleOrderMap,
   userMap,
   strategistMap,
+  designerRoleByProjectMap,
   designerRoleListMap,
 ) {
   return tasks.map((task) => {
@@ -599,13 +600,17 @@ function normalizeTasks(
     const saleOrderRecord = saleOrderId ? saleOrderMap.get(saleOrderId) : undefined;
     const invoiceSummary = saleOrderId ? saleOrderInvoiceMap.get(saleOrderId) : undefined;
 
-    const designerFromRole = designerRoleListMap.get(taskId) ?? [];
+    const designerFromProjectRole = projectId ? (designerRoleByProjectMap.get(projectId) ?? []) : [];
+    const designerFromTaskRole = designerRoleListMap.get(taskId) ?? [];
     const designerFromTask = (task.x_studio_designer ?? [])
       .map((userId) => userMap.get(userId))
       .filter(Boolean)
       .map((user) => ({ id: user.id, name: user.name }));
     const designersMap = new Map();
-    for (const person of designerFromRole) {
+    for (const person of designerFromProjectRole) {
+      designersMap.set(person.id, { id: person.id, name: person.name });
+    }
+    for (const person of designerFromTaskRole) {
       designersMap.set(person.id, { id: person.id, name: person.name });
     }
     for (const person of designerFromTask) {
@@ -714,6 +719,11 @@ async function main() {
       isStrategistRole,
       (slot) => slot.x_studio_parent_task?.[0] ?? null,
     );
+    const designerRoleByProjectMap = buildRoleListMap(
+      planningSlots,
+      isDesignerRole,
+      (slot) => slot.project_id?.[0] ?? null,
+    );
     const designerRoleListMap = buildRoleListMap(
       planningSlots,
       isDesignerRole,
@@ -746,6 +756,7 @@ async function main() {
       projectSaleOrderMap,
       userMap,
       strategistMap,
+      designerRoleByProjectMap,
       designerRoleListMap,
     );
 
