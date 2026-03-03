@@ -14,9 +14,6 @@ const dayMs = 24 * 60 * 60 * 1000;
 const cardColorPalette = ['#b7e36a', '#f5df72', '#93d5ec', '#f4a3a8', '#e5e7eb'];
 const atRiskStorageKey = 'main-view-at-risk-state-v1';
 
-const toPlainText = (value: string) =>
-  value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-
 function startOfToday() {
   const today = new Date();
   return new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
@@ -73,6 +70,16 @@ function invoiceTone(label: string) {
   const value = label.toLowerCase();
   if (value === 'invoiced') return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
   if (value.includes('50%')) return 'bg-amber-50 text-amber-700 border border-amber-200';
+  return 'bg-slate-50 text-slate-700 border border-slate-200';
+}
+
+function paymentTone(status: string | null | undefined) {
+  const value = (status ?? '').toLowerCase();
+  if (value === 'paid') return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+  if (value === 'in_payment') return 'bg-sky-50 text-sky-700 border border-sky-200';
+  if (value === 'partial') return 'bg-amber-50 text-amber-700 border border-amber-200';
+  if (value === 'not_paid') return 'bg-rose-50 text-rose-700 border border-rose-200';
+  if (value === 'reversed') return 'bg-violet-50 text-violet-700 border border-violet-200';
   return 'bg-slate-50 text-slate-700 border border-slate-200';
 }
 
@@ -149,6 +156,7 @@ function SearchableFilterChip({
 export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?: ReactNode; marketFilter?: MarketFilter }) {
   const [designerFilter, setDesignerFilter] = useState('');
   const [accountFilter, setAccountFilter] = useState('all');
+  const [stageFilter, setStageFilter] = useState('all');
   const [daysFilter, setDaysFilter] = useState<DaysFilter>('all');
   const [overdueFilter, setOverdueFilter] = useState<OverdueFilter>('all');
   const [addedSort, setAddedSort] = useState<'recent' | 'oldest'>('recent');
@@ -200,6 +208,18 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
     [marketRows],
   );
 
+  const stageOptions = useMemo<FilterOption[]>(
+    () => [
+      { label: 'All', value: 'all' },
+      ...Array.from(
+        new Set(marketRows.map((row) => row.status?.name?.trim() || 'Not Started')),
+      )
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({ label: value, value })),
+    ],
+    [marketRows],
+  );
+
   const cards = useMemo(() => {
     const filtered = marketRows
       .map((row) => {
@@ -215,6 +235,8 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
           !query || fallbackNames.some((name) => name.toLowerCase().includes(query));
         const matchesAccount =
           accountFilter === 'all' || String(row.accountName ?? '') === String(accountFilter);
+        const statusLabel = row.status?.name?.trim() || 'Not Started';
+        const matchesStage = stageFilter === 'all' || statusLabel === stageFilter;
         const matchesDays = matchesDaysFilter(daysRemaining, daysFilter);
         const matchesOverdue =
           overdueFilter === 'all' ||
@@ -222,7 +244,7 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
             ? daysRemaining !== null && daysRemaining < 0
             : daysRemaining === null || daysRemaining >= 0);
 
-        return matchesDesigner && matchesAccount && matchesDays && matchesOverdue;
+        return matchesDesigner && matchesAccount && matchesStage && matchesDays && matchesOverdue;
       });
     const dir = addedSort === 'recent' ? -1 : 1;
     const sorted = filtered.sort((a, b) => (getSubmissionSortValue(a.row) - getSubmissionSortValue(b.row)) * dir);
@@ -237,7 +259,7 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
       previousColorIndex = colorIndex;
       return { ...entry, cardColor: cardColorPalette[colorIndex] };
     });
-  }, [accountFilter, addedSort, daysFilter, designerFilter, marketRows, overdueFilter, persistedAtRiskState]);
+  }, [accountFilter, addedSort, daysFilter, designerFilter, marketRows, overdueFilter, persistedAtRiskState, stageFilter]);
 
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())
@@ -308,6 +330,12 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
             onChange={(value) => setAddedSort(value as 'recent' | 'oldest')}
           />
           <FilterChip
+            label="Stage"
+            value={stageFilter}
+            options={stageOptions}
+            onChange={setStageFilter}
+          />
+          <FilterChip
             label="Days"
             value={daysFilter}
             options={[
@@ -341,10 +369,11 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
           }}
         >
           {cards.map(({ row, daysRemaining, atRisk, cardColor }) => {
-            const description = row.description ? toPlainText(row.description) : 'No description';
             const statusLabel = row.status?.name ?? 'Not Started';
             const tone = statusTone(statusLabel);
             const invoiceLabel = row.invoice?.statusLabel ?? 'Not invoiced';
+            const paymentLabel = row.payment?.statusLabel ?? 'No Invoice';
+            const paymentStatus = row.payment?.status ?? 'no_invoice';
             const titleParts = parseTitle(row.taskName);
             const daysMessage =
               daysRemaining === null
@@ -419,6 +448,11 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
                   >
                     {invoiceLabel}
                   </span>
+                  <span
+                    className={`inline-flex max-w-[130px] items-center justify-center rounded-full px-2.5 py-1 text-center text-[11px] font-semibold leading-4 break-words whitespace-normal ${paymentTone(paymentStatus)}`}
+                  >
+                    {paymentLabel}
+                  </span>
                   {atRisk ? (
                     <span
                       className={`inline-flex max-w-[120px] items-center justify-center rounded-full border px-2.5 py-1 text-center text-[11px] font-semibold leading-4 break-words whitespace-normal ${atRiskPill}`}
@@ -427,10 +461,6 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
                     </span>
                   ) : null}
                 </div>
-
-                <p className={`line-clamp-2 text-[12px] ${description === 'No description' ? 'italic text-slate-400' : 'text-slate-600'}`}>
-                  {description}
-                </p>
               </article>
             );
           })}

@@ -3,8 +3,9 @@ import { MainView } from './pages/MainView';
 import { CardView } from './pages/CardView';
 import { AvailabilityView } from './pages/AvailabilityView';
 import { BoardView } from './pages/BoardView';
+import { TimelineView } from './pages/TimelineView';
 
-type ViewMode = 'table' | 'cards' | 'availability' | 'board';
+type ViewMode = 'table' | 'cards' | 'availability' | 'board' | 'timeline';
 type MarketFilter = 'all' | 'UAE' | 'KSA';
 
 const segmentButtonClass = (active: boolean) =>
@@ -50,6 +51,13 @@ function ViewSwitcher({
         className={segmentButtonClass(activeView === 'board')}
       >
         Board
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('timeline')}
+        className={segmentButtonClass(activeView === 'timeline')}
+      >
+        Timeline
       </button>
     </div>
   );
@@ -110,6 +118,10 @@ function App() {
 
   if (view === 'board') {
     return <BoardView viewSwitcher={switcher} marketFilter={market} />;
+  }
+
+  if (view === 'timeline') {
+    return <TimelineView viewSwitcher={switcher} marketFilter={market} />;
   }
 
   return <MainView viewSwitcher={switcher} marketFilter={market} />;

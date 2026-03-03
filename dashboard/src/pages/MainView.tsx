@@ -46,6 +46,16 @@ const invoiceToneMap = {
   not_invoiced: { label: 'Not invoiced', tone: 'border-[#dfe3eb] bg-[#f6f7fb] text-[#5f6a7c]' },
 } as const;
 
+const paymentToneMap = {
+  paid: { label: 'Paid', tone: 'border-[#cde7d9] bg-[#ecf6ef] text-[#2f7e50]' },
+  in_payment: { label: 'In Payment', tone: 'border-[#d9e7ff] bg-[#edf5ff] text-[#3b67c6]' },
+  partial: { label: 'Partially Paid', tone: 'border-[#fde7ba] bg-[#fff7e2] text-[#a26800]' },
+  not_paid: { label: 'Not Paid', tone: 'border-[#ffd7d1] bg-[#ffefec] text-[#b54139]' },
+  reversed: { label: 'Reversed', tone: 'border-[#e6dcff] bg-[#f4efff] text-[#6d54b8]' },
+  no_invoice: { label: 'No Invoice', tone: 'border-[#dfe3eb] bg-[#f6f7fb] text-[#5f6a7c]' },
+  unknown: { label: 'Unknown', tone: 'border-[#dfe3eb] bg-[#f6f7fb] text-[#5f6a7c]' },
+} as const;
+
 const formatDate = (value: string | null) => {
   if (!value) return '—';
   const date = new Date(value);
@@ -82,6 +92,7 @@ const columns: Array<{
   { key: 'strategist', label: 'Strategist', width: '150px' },
   { key: 'status', label: 'Status', sortKey: 'status' as SortKey, width: '150px' },
   { key: 'invoice', label: 'Invoice', width: '110px' },
+  { key: 'payment', label: 'Payment', width: '130px' },
   { key: 'startDate', label: 'Start Date', sortKey: 'startDate' as SortKey, width: '150px' },
   {
     key: 'endDate',
@@ -188,6 +199,10 @@ const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) =>
   }
   if (key === 'endDate') {
     return formatDate(row.endDate);
+  }
+  if (key === 'payment') {
+    if (!row.payment) return 'No Invoice';
+    return row.payment.statusLabel;
   }
   if (key === 'atRisk') {
     return rowAtRisk;
@@ -511,6 +526,13 @@ export function MainView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
                             return <Pill tone="border-slate-200 bg-slate-50 text-slate-600">Not invoiced</Pill>;
                           }
                           const tone = invoiceToneMap[row.invoice.status] ?? invoiceToneMap.not_invoiced;
+                          return <Pill tone={tone.tone}>{tone.label}</Pill>;
+                        })()}
+                      </td>
+                      <td className="px-5 py-3" style={columnStyles.payment}>
+                        {(() => {
+                          const paymentKey = row.payment?.status ?? 'no_invoice';
+                          const tone = paymentToneMap[paymentKey] ?? paymentToneMap.unknown;
                           return <Pill tone={tone.tone}>{tone.label}</Pill>;
                         })()}
                       </td>

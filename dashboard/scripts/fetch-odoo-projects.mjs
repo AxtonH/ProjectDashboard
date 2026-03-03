@@ -43,8 +43,9 @@ const requiredTaskFields = [
 ];
 
 const projectFields = ['name', 'partner_id', 'sale_order_id', 'tag_ids', 'x_studio_market_2'];
-const saleOrderFields = ['name', 'invoice_status', 'project_id', 'project_ids'];
+const saleOrderFields = ['name', 'invoice_status', 'project_id', 'project_ids', 'invoice_ids'];
 const saleOrderLineFields = ['order_id', 'product_uom_qty', 'qty_invoiced'];
+const accountMoveFields = ['payment_state', 'state', 'move_type'];
 const userFields = ['name'];
 const planningSlotFields = [
   'project_id',
@@ -189,6 +190,13 @@ async function fetchSaleOrderLines(saleOrderIds) {
       limit: 100000,
     },
   );
+}
+
+async function fetchAccountMoves(moveIds) {
+  if (!moveIds.length) {
+    return [];
+  }
+  return executeKw('account.move', 'read', [moveIds, accountMoveFields]);
 }
 
 async function fetchUsers(userIds) {
@@ -341,6 +349,67 @@ function buildSaleOrderInvoiceMap(saleOrderLines) {
       statusLabel: classified.label,
     });
   }
+  return result;
+}
+
+function labelForPaymentState(state) {
+  if (state === 'paid') return { status: 'paid', statusLabel: 'Paid' };
+  if (state === 'in_payment') return { status: 'in_payment', statusLabel: 'In Payment' };
+  if (state === 'partial') return { status: 'partial', statusLabel: 'Partially Paid' };
+  if (state === 'not_paid') return { status: 'not_paid', statusLabel: 'Not Paid' };
+  if (state === 'reversed') return { status: 'reversed', statusLabel: 'Reversed' };
+  return { status: 'unknown', statusLabel: 'Unknown' };
+}
+
+function buildSaleOrderPaymentMap(saleOrders, accountMoves) {
+  const moveMap = new Map(accountMoves.map((move) => [move.id, move]));
+  const result = new Map();
+
+  for (const order of saleOrders) {
+    const invoiceIds = (order.invoice_ids ?? [])
+      .map((value) => (Array.isArray(value) ? value[0] : value))
+      .filter((id) => Number.isFinite(id));
+
+    if (!invoiceIds.length) {
+      result.set(order.id, { status: 'no_invoice', statusLabel: 'No Invoice' });
+      continue;
+    }
+
+    const invoices = invoiceIds
+      .map((id) => moveMap.get(id))
+      .filter(Boolean)
+      .filter((move) => move.state === 'posted' && (move.move_type === 'out_invoice' || move.move_type === 'out_refund'));
+
+    if (!invoices.length) {
+      result.set(order.id, { status: 'unknown', statusLabel: 'Unknown' });
+      continue;
+    }
+
+    const states = invoices.map((move) => move.payment_state);
+    if (states.every((state) => state === 'paid')) {
+      result.set(order.id, { status: 'paid', statusLabel: 'Paid' });
+      continue;
+    }
+    if (states.includes('in_payment')) {
+      result.set(order.id, { status: 'in_payment', statusLabel: 'In Payment' });
+      continue;
+    }
+    if (states.includes('partial')) {
+      result.set(order.id, { status: 'partial', statusLabel: 'Partially Paid' });
+      continue;
+    }
+    if (states.includes('not_paid')) {
+      result.set(order.id, { status: 'not_paid', statusLabel: 'Not Paid' });
+      continue;
+    }
+    if (states.includes('reversed')) {
+      result.set(order.id, { status: 'reversed', statusLabel: 'Reversed' });
+      continue;
+    }
+
+    result.set(order.id, labelForPaymentState(states[0]));
+  }
+
   return result;
 }
 
@@ -586,6 +655,7 @@ function normalizeTasks(
   projectMap,
   saleOrderMap,
   saleOrderInvoiceMap,
+  saleOrderPaymentMap,
   projectSaleOrderMap,
   userMap,
   strategistMap,
@@ -598,6 +668,7 @@ function normalizeTasks(
     const saleOrderId = projectId ? projectSaleOrderMap.get(projectId) : undefined;
     const saleOrderRecord = saleOrderId ? saleOrderMap.get(saleOrderId) : undefined;
     const invoiceSummary = saleOrderId ? saleOrderInvoiceMap.get(saleOrderId) : undefined;
+    const paymentSummary = saleOrderId ? saleOrderPaymentMap.get(saleOrderId) : undefined;
 
     const designerFromTaskRole = designerRoleListMap.get(taskId) ?? [];
     const designerFromTask = (task.x_studio_designer ?? [])
@@ -643,6 +714,7 @@ function normalizeTasks(
             quantityInvoiced: invoiceSummary?.quantityInvoiced ?? 0,
           }
         : null,
+      payment: paymentSummary ?? null,
       startDate: normalizeDate(task.x_studio_request_receipt_date_time ?? task.date_deadline),
       endDate: normalizeDate(task.x_studio_internal_due_date_1 ?? task.date_deadline),
       submissionDate: normalizeDate(task.x_studio_submission_date_time_1),
@@ -693,6 +765,16 @@ async function main() {
     console.log(`Fetched ${mergedSaleOrders.length} linked sale.order records`);
     const saleOrderLines = await fetchSaleOrderLines([...seenSaleOrderIds]);
     console.log(`Fetched ${saleOrderLines.length} sale.order.line records`);
+    const invoiceIds = Array.from(
+      new Set(
+        mergedSaleOrders
+          .flatMap((order) => order.invoice_ids ?? [])
+          .map((value) => (Array.isArray(value) ? value[0] : value))
+          .filter((id) => Number.isFinite(id)),
+      ),
+    );
+    const accountMoves = await fetchAccountMoves(invoiceIds);
+    console.log(`Fetched ${accountMoves.length} account.move records for payment states`);
 
     const users = await fetchUsers(userIds);
     console.log(`Fetched ${users.length} res.users records`);
@@ -707,6 +789,7 @@ async function main() {
     const projectMap = buildMap(projects);
     const saleOrderMap = buildMap(mergedSaleOrders);
     const saleOrderInvoiceMap = buildSaleOrderInvoiceMap(saleOrderLines);
+    const saleOrderPaymentMap = buildSaleOrderPaymentMap(mergedSaleOrders, accountMoves);
     const projectSaleOrderMap = buildProjectSaleOrderMap(projects, mergedSaleOrders);
     const userMap = buildMap(users);
     const strategistMap = buildRoleMap(
@@ -743,6 +826,7 @@ async function main() {
       projectMap,
       saleOrderMap,
       saleOrderInvoiceMap,
+      saleOrderPaymentMap,
       projectSaleOrderMap,
       userMap,
       strategistMap,

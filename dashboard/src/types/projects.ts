@@ -13,6 +13,11 @@ export type InvoiceInfo = {
   quantityInvoiced?: number;
 };
 
+export type PaymentInfo = {
+  status: 'no_invoice' | 'not_paid' | 'in_payment' | 'paid' | 'partial' | 'reversed' | 'unknown';
+  statusLabel: string;
+};
+
 export type StatusInfo = {
   id: number;
   name: string;
@@ -31,6 +36,7 @@ export type ProjectRow = {
   strategist: PersonRole | null;
   status: StatusInfo | null;
   invoice: InvoiceInfo | null;
+  payment?: PaymentInfo | null;
   startDate: string | null;
   endDate: string | null;
   submissionDate: string | null;
