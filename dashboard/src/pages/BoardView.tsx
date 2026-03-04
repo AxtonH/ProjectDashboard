@@ -11,6 +11,13 @@ const snapshot = snapshotRaw as OdooSnapshot;
 const baseRows: ProjectRow[] = snapshot.rows ?? [];
 const atRiskStorageKey = 'main-view-at-risk-state-v1';
 
+const formatCurrencyAed = (value: number) =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'AED',
+    maximumFractionDigits: 0,
+  }).format(value);
+
 const toPlainText = (value: string) =>
   value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -116,7 +123,17 @@ export function BoardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher
       buckets[key].sort(sortByRecent);
     }
 
-    return buckets;
+    const revenueByColumn: Record<BoardColumnKey, number> = {
+      open: 0,
+      progress: 0,
+      completed: 0,
+      atRisk: 0,
+    };
+    for (const key of Object.keys(buckets) as BoardColumnKey[]) {
+      revenueByColumn[key] = buckets[key].reduce((sum, row) => sum + Number(row.revenueAed ?? 0), 0);
+    }
+
+    return { buckets, revenueByColumn };
   }, [marketRows, persistedAtRiskState]);
 
   const lastSync = new Date(snapshot.generatedAt);
@@ -147,14 +164,19 @@ export function BoardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher
             <header className={`sticky top-[84px] z-[5] rounded-t-xl border-b px-3 py-2 ${column.headerClass}`}>
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold">{column.label}</h2>
-                <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs font-semibold">
-                  {grouped[column.key].length}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-white/70 px-2 py-0.5 text-[0.7rem] font-semibold">
+                    {formatCurrencyAed(grouped.revenueByColumn[column.key])}
+                  </span>
+                  <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs font-semibold">
+                    {grouped.buckets[column.key].length}
+                  </span>
+                </div>
               </div>
             </header>
 
             <div className="max-h-[calc(100vh-190px)] space-y-2 overflow-y-auto p-3">
-              {grouped[column.key].map((row) => (
+              {grouped.buckets[column.key].map((row) => (
                 <article key={`${column.key}-${row.taskId}`} className="rounded-lg border border-white/70 bg-white p-3 shadow-sm">
                   <p className="truncate text-sm font-semibold text-slate-900">{row.taskName}</p>
                   <p className="truncate text-xs text-slate-500">{row.accountName ?? 'TBD'}</p>

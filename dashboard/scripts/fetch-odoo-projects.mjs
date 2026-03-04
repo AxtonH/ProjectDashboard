@@ -37,6 +37,7 @@ const requiredTaskFields = [
   'state',
   'date_deadline',
   'x_studio_internal_due_date_1',
+  'x_studio_client_due_date_3',
   'x_studio_submission_date_time_1',
   'x_studio_request_receipt_date_time',
   'parent_id',
@@ -44,7 +45,7 @@ const requiredTaskFields = [
 
 const projectFields = ['name', 'partner_id', 'sale_order_id', 'tag_ids', 'x_studio_market_2'];
 const saleOrderFields = ['name', 'invoice_status', 'project_id', 'project_ids', 'invoice_ids'];
-const saleOrderLineFields = ['order_id', 'product_uom_qty', 'qty_invoiced'];
+const saleOrderLineFields = ['order_id', 'product_uom_qty', 'qty_invoiced', 'price_subtotal', 'price_total'];
 const accountMoveFields = ['payment_state', 'state', 'move_type'];
 const userFields = ['name'];
 const planningSlotFields = [
@@ -352,6 +353,26 @@ function buildSaleOrderInvoiceMap(saleOrderLines) {
   return result;
 }
 
+function buildSaleOrderRevenueMap(saleOrderLines) {
+  const map = new Map();
+  for (const line of saleOrderLines) {
+    const orderId = line.order_id?.[0];
+    if (!orderId) continue;
+    const subtotalWithTax = Number(line.price_total ?? line.price_subtotal ?? 0);
+    if (!map.has(orderId)) {
+      map.set(orderId, 0);
+    }
+    if (Number.isFinite(subtotalWithTax)) {
+      map.set(orderId, map.get(orderId) + subtotalWithTax);
+    }
+  }
+  const rounded = new Map();
+  for (const [orderId, total] of map.entries()) {
+    rounded.set(orderId, Number(total.toFixed(2)));
+  }
+  return rounded;
+}
+
 function labelForPaymentState(state) {
   if (state === 'paid') return { status: 'paid', statusLabel: 'Paid' };
   if (state === 'in_payment') return { status: 'in_payment', statusLabel: 'In Payment' };
@@ -655,6 +676,7 @@ function normalizeTasks(
   projectMap,
   saleOrderMap,
   saleOrderInvoiceMap,
+  saleOrderRevenueMap,
   saleOrderPaymentMap,
   projectSaleOrderMap,
   userMap,
@@ -668,6 +690,7 @@ function normalizeTasks(
     const saleOrderId = projectId ? projectSaleOrderMap.get(projectId) : undefined;
     const saleOrderRecord = saleOrderId ? saleOrderMap.get(saleOrderId) : undefined;
     const invoiceSummary = saleOrderId ? saleOrderInvoiceMap.get(saleOrderId) : undefined;
+    const revenueAed = saleOrderId ? Number(saleOrderRevenueMap.get(saleOrderId) ?? 0) : 0;
     const paymentSummary = saleOrderId ? saleOrderPaymentMap.get(saleOrderId) : undefined;
 
     const designerFromTaskRole = designerRoleListMap.get(taskId) ?? [];
@@ -715,8 +738,10 @@ function normalizeTasks(
           }
         : null,
       payment: paymentSummary ?? null,
+      revenueAed,
       startDate: normalizeDate(task.x_studio_request_receipt_date_time ?? task.date_deadline),
-      endDate: normalizeDate(task.x_studio_internal_due_date_1 ?? task.date_deadline),
+      endDate: normalizeDate(task.x_studio_internal_due_date_1),
+      clientDueDate: normalizeDate(task.x_studio_client_due_date_3),
       submissionDate: normalizeDate(task.x_studio_submission_date_time_1),
     };
   });
@@ -789,6 +814,7 @@ async function main() {
     const projectMap = buildMap(projects);
     const saleOrderMap = buildMap(mergedSaleOrders);
     const saleOrderInvoiceMap = buildSaleOrderInvoiceMap(saleOrderLines);
+    const saleOrderRevenueMap = buildSaleOrderRevenueMap(saleOrderLines);
     const saleOrderPaymentMap = buildSaleOrderPaymentMap(mergedSaleOrders, accountMoves);
     const projectSaleOrderMap = buildProjectSaleOrderMap(projects, mergedSaleOrders);
     const userMap = buildMap(users);
@@ -826,6 +852,7 @@ async function main() {
       projectMap,
       saleOrderMap,
       saleOrderInvoiceMap,
+      saleOrderRevenueMap,
       saleOrderPaymentMap,
       projectSaleOrderMap,
       userMap,

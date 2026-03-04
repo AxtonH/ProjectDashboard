@@ -14,6 +14,13 @@ const dayMs = 24 * 60 * 60 * 1000;
 const cardColorPalette = ['#b7e36a', '#f5df72', '#93d5ec', '#f4a3a8', '#e5e7eb'];
 const atRiskStorageKey = 'main-view-at-risk-state-v1';
 
+const formatCurrencyAed = (value: number) =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'AED',
+    maximumFractionDigits: 0,
+  }).format(value);
+
 function startOfToday() {
   const today = new Date();
   return new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
@@ -374,6 +381,7 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
             const invoiceLabel = row.invoice?.statusLabel ?? 'Not invoiced';
             const paymentLabel = row.payment?.statusLabel ?? 'No Invoice';
             const paymentStatus = row.payment?.status ?? 'no_invoice';
+            const revenueLabel = formatCurrencyAed(Number(row.revenueAed ?? 0));
             const titleParts = parseTitle(row.taskName);
             const daysMessage =
               daysRemaining === null
@@ -452,6 +460,9 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
                     className={`inline-flex max-w-[130px] items-center justify-center rounded-full px-2.5 py-1 text-center text-[11px] font-semibold leading-4 break-words whitespace-normal ${paymentTone(paymentStatus)}`}
                   >
                     {paymentLabel}
+                  </span>
+                  <span className="inline-flex max-w-[140px] items-center justify-center rounded-full border border-slate-300 bg-slate-100 px-2.5 py-1 text-center text-[11px] font-semibold leading-4 text-slate-700 break-words whitespace-normal">
+                    {revenueLabel}
                   </span>
                   {atRisk ? (
                     <span
