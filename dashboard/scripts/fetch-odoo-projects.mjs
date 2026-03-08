@@ -44,7 +44,7 @@ const requiredTaskFields = [
 ];
 
 const projectFields = ['name', 'partner_id', 'sale_order_id', 'tag_ids', 'x_studio_market_2'];
-const saleOrderFields = ['name', 'invoice_status', 'project_id', 'project_ids', 'invoice_ids'];
+const saleOrderFields = ['name', 'invoice_status', 'project_id', 'project_ids', 'invoice_ids', 'x_studio_aed_amount_to_invoice'];
 const saleOrderLineFields = ['order_id', 'product_uom_qty', 'qty_invoiced', 'price_subtotal', 'price_total'];
 const accountMoveFields = ['payment_state', 'state', 'move_type'];
 const userFields = ['name'];
@@ -373,6 +373,15 @@ function buildSaleOrderRevenueMap(saleOrderLines) {
   return rounded;
 }
 
+function buildSaleOrderAmountToInvoiceMap(saleOrders) {
+  const map = new Map();
+  for (const order of saleOrders) {
+    const amount = Number(order.x_studio_aed_amount_to_invoice ?? 0);
+    map.set(order.id, Number.isFinite(amount) ? Number(amount.toFixed(2)) : 0);
+  }
+  return map;
+}
+
 function labelForPaymentState(state) {
   if (state === 'paid') return { status: 'paid', statusLabel: 'Paid' };
   if (state === 'in_payment') return { status: 'in_payment', statusLabel: 'In Payment' };
@@ -677,6 +686,7 @@ function normalizeTasks(
   saleOrderMap,
   saleOrderInvoiceMap,
   saleOrderRevenueMap,
+  saleOrderAmountToInvoiceMap,
   saleOrderPaymentMap,
   projectSaleOrderMap,
   userMap,
@@ -691,6 +701,7 @@ function normalizeTasks(
     const saleOrderRecord = saleOrderId ? saleOrderMap.get(saleOrderId) : undefined;
     const invoiceSummary = saleOrderId ? saleOrderInvoiceMap.get(saleOrderId) : undefined;
     const revenueAed = saleOrderId ? Number(saleOrderRevenueMap.get(saleOrderId) ?? 0) : 0;
+    const amountToInvoiceAed = saleOrderId ? Number(saleOrderAmountToInvoiceMap.get(saleOrderId) ?? 0) : 0;
     const paymentSummary = saleOrderId ? saleOrderPaymentMap.get(saleOrderId) : undefined;
 
     const designerFromTaskRole = designerRoleListMap.get(taskId) ?? [];
@@ -739,6 +750,7 @@ function normalizeTasks(
         : null,
       payment: paymentSummary ?? null,
       revenueAed,
+      amountToInvoiceAed,
       startDate: normalizeDate(task.x_studio_request_receipt_date_time ?? task.date_deadline),
       endDate: normalizeDate(task.x_studio_internal_due_date_1),
       clientDueDate: normalizeDate(task.x_studio_client_due_date_3),
@@ -815,6 +827,7 @@ async function main() {
     const saleOrderMap = buildMap(mergedSaleOrders);
     const saleOrderInvoiceMap = buildSaleOrderInvoiceMap(saleOrderLines);
     const saleOrderRevenueMap = buildSaleOrderRevenueMap(saleOrderLines);
+    const saleOrderAmountToInvoiceMap = buildSaleOrderAmountToInvoiceMap(mergedSaleOrders);
     const saleOrderPaymentMap = buildSaleOrderPaymentMap(mergedSaleOrders, accountMoves);
     const projectSaleOrderMap = buildProjectSaleOrderMap(projects, mergedSaleOrders);
     const userMap = buildMap(users);
@@ -853,6 +866,7 @@ async function main() {
       saleOrderMap,
       saleOrderInvoiceMap,
       saleOrderRevenueMap,
+      saleOrderAmountToInvoiceMap,
       saleOrderPaymentMap,
       projectSaleOrderMap,
       userMap,

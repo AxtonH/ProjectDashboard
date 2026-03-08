@@ -38,6 +38,7 @@ export type ProjectRow = {
   invoice: InvoiceInfo | null;
   payment?: PaymentInfo | null;
   revenueAed?: number;
+  amountToInvoiceAed?: number;
   startDate: string | null;
   endDate: string | null;
   clientDueDate?: string | null;

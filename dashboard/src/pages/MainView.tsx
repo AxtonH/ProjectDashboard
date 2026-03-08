@@ -101,6 +101,7 @@ const columns: Array<{
   { key: 'invoice', label: 'Invoice', width: '110px' },
   { key: 'payment', label: 'Payment', width: '130px' },
   { key: 'revenue', label: 'Revenue', width: '130px' },
+  { key: 'amountToInvoice', label: 'Amount to Invoice', width: '170px' },
   { key: 'startDate', label: 'Start Date', sortKey: 'startDate' as SortKey, width: '150px' },
   {
     key: 'endDate',
@@ -214,6 +215,9 @@ const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) =>
   }
   if (key === 'revenue') {
     return formatCurrencyAed(Number(row.revenueAed ?? 0));
+  }
+  if (key === 'amountToInvoice') {
+    return formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0));
   }
   if (key === 'atRisk') {
     return rowAtRisk;
@@ -366,7 +370,7 @@ export function MainView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
     >
       <section className="space-y-1" style={{ ['--filters-offset' as string]: '64px' }}>
         <div className="overflow-x-auto overflow-y-auto rounded-[20px] border border-divider bg-white shadow-sm max-h-[calc(100vh-190px)]">
-            <table className="min-w-[2100px] table-fixed border-collapse">
+            <table className="min-w-[2270px] table-fixed border-collapse">
               <thead className="sticky top-0 z-40 bg-[#f9fafc] text-left text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-400 shadow-[0_1px_0_0_#eceff3]">
                 <tr>
                   {columns.map((column) => (
@@ -549,6 +553,9 @@ export function MainView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
                       </td>
                       <td className="px-5 py-3 text-slate-600" style={columnStyles.revenue}>
                         {formatCurrencyAed(Number(row.revenueAed ?? 0))}
+                      </td>
+                      <td className="px-5 py-3 text-slate-600" style={columnStyles.amountToInvoice}>
+                        {formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0))}
                       </td>
                       <td className="px-5 py-3 text-slate-600" style={columnStyles.startDate}>
                         {formatDate(row.startDate)}

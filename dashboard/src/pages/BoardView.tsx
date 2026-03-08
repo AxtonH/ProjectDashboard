@@ -123,17 +123,17 @@ export function BoardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher
       buckets[key].sort(sortByRecent);
     }
 
-    const revenueByColumn: Record<BoardColumnKey, number> = {
+    const amountToInvoiceByColumn: Record<BoardColumnKey, number> = {
       open: 0,
       progress: 0,
       completed: 0,
       atRisk: 0,
     };
     for (const key of Object.keys(buckets) as BoardColumnKey[]) {
-      revenueByColumn[key] = buckets[key].reduce((sum, row) => sum + Number(row.revenueAed ?? 0), 0);
+      amountToInvoiceByColumn[key] = buckets[key].reduce((sum, row) => sum + Number(row.amountToInvoiceAed ?? 0), 0);
     }
 
-    return { buckets, revenueByColumn };
+    return { buckets, amountToInvoiceByColumn };
   }, [marketRows, persistedAtRiskState]);
 
   const lastSync = new Date(snapshot.generatedAt);
@@ -166,7 +166,7 @@ export function BoardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher
                 <h2 className="text-sm font-semibold">{column.label}</h2>
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-white/70 px-2 py-0.5 text-[0.7rem] font-semibold">
-                    {formatCurrencyAed(grouped.revenueByColumn[column.key])}
+                    Amount to invoice: {formatCurrencyAed(grouped.amountToInvoiceByColumn[column.key])}
                   </span>
                   <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs font-semibold">
                     {grouped.buckets[column.key].length}
