@@ -44,7 +44,7 @@ const requiredTaskFields = [
 ];
 
 const projectFields = ['name', 'partner_id', 'sale_order_id', 'tag_ids', 'x_studio_market_2'];
-const saleOrderFields = ['name', 'invoice_status', 'project_id', 'project_ids', 'invoice_ids', 'x_studio_aed_amount_to_invoice'];
+const saleOrderFields = ['name', 'invoice_status', 'project_id', 'project_ids', 'invoice_ids', 'x_studio_aed_amount_to_invoice', 'x_studio_aed_total'];
 const saleOrderLineFields = ['order_id', 'product_uom_qty', 'qty_invoiced', 'price_subtotal', 'price_total'];
 const accountMoveFields = ['payment_state', 'state', 'move_type'];
 const userFields = ['name'];
@@ -353,24 +353,13 @@ function buildSaleOrderInvoiceMap(saleOrderLines) {
   return result;
 }
 
-function buildSaleOrderRevenueMap(saleOrderLines) {
+function buildSaleOrderRevenueMap(saleOrders) {
   const map = new Map();
-  for (const line of saleOrderLines) {
-    const orderId = line.order_id?.[0];
-    if (!orderId) continue;
-    const subtotalWithTax = Number(line.price_total ?? line.price_subtotal ?? 0);
-    if (!map.has(orderId)) {
-      map.set(orderId, 0);
-    }
-    if (Number.isFinite(subtotalWithTax)) {
-      map.set(orderId, map.get(orderId) + subtotalWithTax);
-    }
+  for (const order of saleOrders) {
+    const amount = Number(order.x_studio_aed_total ?? 0);
+    map.set(order.id, Number.isFinite(amount) ? Number(amount.toFixed(2)) : 0);
   }
-  const rounded = new Map();
-  for (const [orderId, total] of map.entries()) {
-    rounded.set(orderId, Number(total.toFixed(2)));
-  }
-  return rounded;
+  return map;
 }
 
 function buildSaleOrderAmountToInvoiceMap(saleOrders) {
@@ -826,7 +815,7 @@ async function main() {
     const projectMap = buildMap(projects);
     const saleOrderMap = buildMap(mergedSaleOrders);
     const saleOrderInvoiceMap = buildSaleOrderInvoiceMap(saleOrderLines);
-    const saleOrderRevenueMap = buildSaleOrderRevenueMap(saleOrderLines);
+    const saleOrderRevenueMap = buildSaleOrderRevenueMap(mergedSaleOrders);
     const saleOrderAmountToInvoiceMap = buildSaleOrderAmountToInvoiceMap(mergedSaleOrders);
     const saleOrderPaymentMap = buildSaleOrderPaymentMap(mergedSaleOrders, accountMoves);
     const projectSaleOrderMap = buildProjectSaleOrderMap(projects, mergedSaleOrders);
