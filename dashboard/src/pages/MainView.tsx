@@ -485,6 +485,7 @@ export function MainView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
                     <tr key={row.taskId} className="hover:bg-slate-50/70">
                       <td className="px-5 py-3" style={columnStyles.account}>
                         <div className="font-semibold text-slate-900">{row.accountName ?? '—'}</div>
+                        {row.invoice?.label ? <p className="text-xs font-medium text-slate-700">{row.invoice.label}</p> : null}
                         {showClient ? <p className="text-xs text-slate-500">{showClient}</p> : null}
                       </td>
                       <td className="px-5 py-3" style={columnStyles.project}>
