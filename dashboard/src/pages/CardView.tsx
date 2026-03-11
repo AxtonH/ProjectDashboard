@@ -11,7 +11,8 @@ type MarketFilter = 'all' | 'UAE' | 'KSA';
 const snapshot = snapshotRaw as OdooSnapshot;
 const baseRows: ProjectRow[] = snapshot.rows ?? [];
 const dayMs = 24 * 60 * 60 * 1000;
-const cardColorPalette = ['#b7e36a', '#f5df72', '#93d5ec', '#f4a3a8', '#e5e7eb'];
+const overdueCardColor = '#f4a3a8';
+const neutralCardColor = '#e5e7eb';
 const atRiskStorageKey = 'main-view-at-risk-state-v1';
 
 const formatCurrencyAed = (value: number) =>
@@ -88,6 +89,11 @@ function paymentTone(status: string | null | undefined) {
   if (value === 'not_paid') return 'bg-rose-50 text-rose-700 border border-rose-200';
   if (value === 'reversed') return 'bg-violet-50 text-violet-700 border border-violet-200';
   return 'bg-slate-50 text-slate-700 border border-slate-200';
+}
+
+function isCompletedStatus(statusName: string | null | undefined) {
+  const value = (statusName ?? '').toLowerCase();
+  return value.includes('complete') || value.includes('done');
 }
 
 const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
@@ -232,7 +238,8 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
       .map((row) => {
         const daysRemaining = getDaysRemaining(row.endDate);
         const atRisk = (persistedAtRiskState[row.taskId] ?? 'No') === 'Yes';
-        return { row, daysRemaining, atRisk };
+        const completed = isCompletedStatus(row.status?.name);
+        return { row, daysRemaining, atRisk, completed };
       })
       .filter(({ row, daysRemaining }) => {
         const query = designerFilter.trim().toLowerCase();
@@ -255,17 +262,12 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
       });
     const dir = addedSort === 'recent' ? -1 : 1;
     const sorted = filtered.sort((a, b) => (getSubmissionSortValue(a.row) - getSubmissionSortValue(b.row)) * dir);
-
-    let previousColorIndex = -1;
-    return sorted.map((entry) => {
-      const seed = Math.abs(entry.row.taskId) % cardColorPalette.length;
-      let colorIndex = seed;
-      if (colorIndex === previousColorIndex) {
-        colorIndex = (colorIndex + 1) % cardColorPalette.length;
-      }
-      previousColorIndex = colorIndex;
-      return { ...entry, cardColor: cardColorPalette[colorIndex] };
-    });
+    return sorted.map((entry) => ({
+      ...entry,
+      cardColor: !entry.completed && entry.daysRemaining !== null && entry.daysRemaining < 0
+        ? overdueCardColor
+        : neutralCardColor,
+    }));
   }, [accountFilter, addedSort, daysFilter, designerFilter, marketRows, overdueFilter, persistedAtRiskState, stageFilter]);
 
   const lastSync = new Date(snapshot.generatedAt);
@@ -375,7 +377,7 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
             justifyContent: 'center',
           }}
         >
-          {cards.map(({ row, daysRemaining, atRisk, cardColor }) => {
+          {cards.map(({ row, daysRemaining, atRisk, cardColor, completed }) => {
             const statusLabel = row.status?.name ?? 'Not Started';
             const tone = statusTone(statusLabel);
             const invoiceLabel = row.invoice?.statusLabel ?? 'Not invoiced';
@@ -384,13 +386,17 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
             const revenueLabel = formatCurrencyAed(Number(row.revenueAed ?? 0));
             const titleParts = parseTitle(row.taskName);
             const daysMessage =
-              daysRemaining === null
+              completed
+                ? 'Completed'
+                : daysRemaining === null
                 ? 'Timeline TBD'
                 : daysRemaining < 0
                   ? `${Math.abs(daysRemaining)} days overdue`
                   : `${daysRemaining} days left`;
             const daysTone =
-              daysRemaining === null
+              completed
+                ? 'text-slate-500'
+                : daysRemaining === null
                 ? 'text-slate-500'
                 : daysRemaining < 0
                   ? 'text-rose-600'
