@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node ./scripts/run-dev.mjs",
+    "dev:nosync": "vite",
     "build": "node ./scripts/run-build.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
