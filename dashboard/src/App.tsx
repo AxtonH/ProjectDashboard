@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import snapshotRaw from './data/odoo-projects.json';
 import { MainView } from './pages/MainView';
 import { CardView } from './pages/CardView';
 import { AvailabilityView } from './pages/AvailabilityView';
 import { BoardView } from './pages/BoardView';
+import type { OdooSnapshot } from './types/projects';
 
 type ViewMode = 'table' | 'cards' | 'availability' | 'board';
 type MarketFilter = 'all' | 'UAE' | 'KSA';
@@ -93,6 +95,32 @@ function MarketSwitcher({
 function App() {
   const [view, setView] = useState<ViewMode>('table');
   const [market, setMarket] = useState<MarketFilter>('all');
+  const [snapshot, setSnapshot] = useState<OdooSnapshot>(snapshotRaw as OdooSnapshot);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLatestSnapshot = async () => {
+      try {
+        const response = await fetch('/api/odoo-snapshot', { cache: 'no-store' });
+        if (!response.ok) {
+          return;
+        }
+        const nextSnapshot = (await response.json()) as OdooSnapshot;
+        if (active) {
+          setSnapshot(nextSnapshot);
+        }
+      } catch {
+        // Fall back to bundled snapshot when API is unavailable.
+      }
+    };
+
+    void loadLatestSnapshot();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const switcher = (
     <div className="flex flex-wrap items-center justify-end gap-2">
       <ViewSwitcher activeView={view} onChange={setView} />
@@ -101,18 +129,18 @@ function App() {
   );
 
   if (view === 'cards') {
-    return <CardView viewSwitcher={switcher} marketFilter={market} />;
+    return <CardView snapshot={snapshot} viewSwitcher={switcher} marketFilter={market} />;
   }
 
   if (view === 'availability') {
-    return <AvailabilityView viewSwitcher={switcher} marketFilter={market} />;
+    return <AvailabilityView snapshot={snapshot} viewSwitcher={switcher} marketFilter={market} />;
   }
 
   if (view === 'board') {
-    return <BoardView viewSwitcher={switcher} marketFilter={market} />;
+    return <BoardView snapshot={snapshot} viewSwitcher={switcher} marketFilter={market} />;
   }
 
-  return <MainView viewSwitcher={switcher} marketFilter={market} />;
+  return <MainView snapshot={snapshot} viewSwitcher={switcher} marketFilter={market} />;
 }
 
 export default App;

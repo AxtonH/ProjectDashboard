@@ -1,5 +1,4 @@
 import { useMemo, type ReactNode } from 'react';
-import snapshotRaw from '../data/odoo-projects.json';
 import { AppShell } from '../components/layout/AppShell';
 import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
@@ -7,8 +6,6 @@ type AtRiskValue = 'Yes' | 'No';
 type BoardColumnKey = 'open' | 'progress' | 'completed' | 'atRisk';
 type MarketFilter = 'all' | 'UAE' | 'KSA';
 
-const snapshot = snapshotRaw as OdooSnapshot;
-const baseRows: ProjectRow[] = snapshot.rows ?? [];
 const atRiskStorageKey = 'main-view-at-risk-state-v1';
 
 const formatCurrencyAed = (value: number) =>
@@ -78,8 +75,17 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   return market.includes(marketFilter);
 };
 
-export function BoardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?: ReactNode; marketFilter?: MarketFilter }) {
-  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [marketFilter]);
+export function BoardView({
+  snapshot,
+  viewSwitcher,
+  marketFilter = 'all',
+}: {
+  snapshot: OdooSnapshot;
+  viewSwitcher?: ReactNode;
+  marketFilter?: MarketFilter;
+}) {
+  const baseRows: ProjectRow[] = snapshot.rows ?? [];
+  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [baseRows, marketFilter]);
 
   const persistedAtRiskState = useMemo<Record<number, AtRiskValue>>(() => {
     if (typeof window === 'undefined') return {};

@@ -1,5 +1,4 @@
 import { useMemo, type ReactNode } from 'react';
-import snapshotRaw from '../data/odoo-projects.json';
 import { AppShell } from '../components/layout/AppShell';
 import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
@@ -14,9 +13,6 @@ type PersonAvailability = {
   workload: WorkloadLabel;
   projects: string[];
 };
-
-const snapshot = snapshotRaw as OdooSnapshot;
-const baseRows: ProjectRow[] = snapshot.rows ?? [];
 
 const isPlanningStatus = (statusName: string | null | undefined) => {
   if (!statusName) return true;
@@ -64,13 +60,16 @@ function workloadStyle(workload: WorkloadLabel) {
 }
 
 export function AvailabilityView({
+  snapshot,
   viewSwitcher,
   marketFilter = 'all',
 }: {
+  snapshot: OdooSnapshot;
   viewSwitcher?: ReactNode;
   marketFilter?: MarketFilter;
 }) {
-  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [marketFilter]);
+  const baseRows: ProjectRow[] = snapshot.rows ?? [];
+  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [baseRows, marketFilter]);
 
   const availabilityCards = useMemo<PersonAvailability[]>(() => {
     const marketKey = marketFilter === 'UAE' ? 'uae' : (marketFilter === 'KSA' ? 'ksa' : 'all');
@@ -113,7 +112,7 @@ export function AvailabilityView({
         if (b.projectsThisWeek !== a.projectsThisWeek) return b.projectsThisWeek - a.projectsThisWeek;
         return a.name.localeCompare(b.name);
       });
-  }, [marketRows]);
+  }, [marketFilter, marketRows, snapshot.designerAvailability, snapshot.designerAvailabilityByMarket]);
 
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())

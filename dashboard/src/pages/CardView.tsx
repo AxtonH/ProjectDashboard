@@ -1,5 +1,4 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import snapshotRaw from '../data/odoo-projects.json';
 import { AppShell } from '../components/layout/AppShell';
 import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
@@ -8,8 +7,6 @@ type OverdueFilter = 'all' | 'overdue' | 'not_overdue';
 type AtRiskValue = 'Yes' | 'No';
 type MarketFilter = 'all' | 'UAE' | 'KSA';
 
-const snapshot = snapshotRaw as OdooSnapshot;
-const baseRows: ProjectRow[] = snapshot.rows ?? [];
 const dayMs = 24 * 60 * 60 * 1000;
 const overdueCardColor = '#f4a3a8';
 const neutralCardColor = '#e5e7eb';
@@ -166,7 +163,16 @@ function SearchableFilterChip({
   );
 }
 
-export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?: ReactNode; marketFilter?: MarketFilter }) {
+export function CardView({
+  snapshot,
+  viewSwitcher,
+  marketFilter = 'all',
+}: {
+  snapshot: OdooSnapshot;
+  viewSwitcher?: ReactNode;
+  marketFilter?: MarketFilter;
+}) {
+  const baseRows: ProjectRow[] = snapshot.rows ?? [];
   const [designerFilter, setDesignerFilter] = useState('');
   const [accountFilter, setAccountFilter] = useState('all');
   const [stageFilter, setStageFilter] = useState('all');
@@ -190,7 +196,7 @@ export function CardView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
       return {};
     }
   }, []);
-  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [marketFilter]);
+  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [baseRows, marketFilter]);
 
   const designerOptions = useMemo(
     () =>

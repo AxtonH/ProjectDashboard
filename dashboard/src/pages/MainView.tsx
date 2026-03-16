@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import snapshotRaw from '../data/odoo-projects.json';
 import { AppShell } from '../components/layout/AppShell';
 import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
@@ -22,8 +21,6 @@ const formatCurrencyAed = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
-const snapshot = snapshotRaw as OdooSnapshot;
-const baseRows: ProjectRow[] = snapshot.rows ?? [];
 const atRiskStorageKey = 'main-view-at-risk-state-v1';
 
 const statusTone = (value?: string | null) => {
@@ -141,10 +138,8 @@ function Pill({
   );
 }
 
-const initialAtRiskState = Object.fromEntries(baseRows.map((row) => [row.taskId, 'No'])) as Record<
-  number,
-  AtRiskValue
->;
+const toInitialAtRiskState = (rows: ProjectRow[]) =>
+  Object.fromEntries(rows.map((row) => [row.taskId, 'No'])) as Record<number, AtRiskValue>;
 const initialColumnFilters = Object.fromEntries(columns.map((column) => [column.key, ''])) as ColumnFilterState;
 const initialDateRangeFilters: DateRangeFilterState = {
   startDateFrom: '',
@@ -225,12 +220,23 @@ const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) =>
   return '—';
 };
 
-export function MainView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?: ReactNode; marketFilter?: MarketFilter }) {
+export function MainView({
+  snapshot,
+  viewSwitcher,
+  marketFilter = 'all',
+}: {
+  snapshot: OdooSnapshot;
+  viewSwitcher?: ReactNode;
+  marketFilter?: MarketFilter;
+}) {
+  const baseRows: ProjectRow[] = snapshot.rows ?? [];
+
   const [sortState, setSortState] = useState<{ key: SortKey; direction: SortDirection }>({
     key: 'submissionDate',
     direction: 'desc',
   });
   const [atRiskState, setAtRiskState] = useState<Record<number, AtRiskValue>>(() => {
+    const initialAtRiskState = toInitialAtRiskState(baseRows);
     if (typeof window === 'undefined') return initialAtRiskState;
     try {
       const saved = window.localStorage.getItem(atRiskStorageKey);
@@ -257,7 +263,14 @@ export function MainView({ viewSwitcher, marketFilter = 'all' }: { viewSwitcher?
     window.localStorage.setItem(atRiskStorageKey, JSON.stringify(atRiskState));
   }, [atRiskState]);
 
-  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [marketFilter]);
+  useEffect(() => {
+    setAtRiskState((prev) => {
+      const next = { ...toInitialAtRiskState(baseRows), ...prev };
+      return next;
+    });
+  }, [baseRows]);
+
+  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [baseRows, marketFilter]);
 
   const columnFilterOptions = useMemo(() => {
     const options: Record<string, string[]> = {};
