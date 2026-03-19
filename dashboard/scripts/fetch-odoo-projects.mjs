@@ -31,6 +31,7 @@ const requiredTaskFields = [
   'name',
   'project_id',
   'description',
+  'sale_line_id',
   'user_ids',
   'x_studio_designer',
   'stage_id',
@@ -193,6 +194,13 @@ async function fetchSaleOrderLines(saleOrderIds) {
   );
 }
 
+async function fetchSaleOrderLinesByIds(saleOrderLineIds) {
+  if (!saleOrderLineIds.length) {
+    return [];
+  }
+  return executeKw('sale.order.line', 'read', [saleOrderLineIds, saleOrderLineFields]);
+}
+
 async function fetchAccountMoves(moveIds) {
   if (!moveIds.length) {
     return [];
@@ -351,6 +359,18 @@ function buildSaleOrderInvoiceMap(saleOrderLines) {
     });
   }
   return result;
+}
+
+function buildSaleOrderLineToOrderMap(saleOrderLines) {
+  const map = new Map();
+  for (const line of saleOrderLines) {
+    const lineId = line.id;
+    const orderId = line.order_id?.[0];
+    if (lineId && orderId) {
+      map.set(lineId, orderId);
+    }
+  }
+  return map;
 }
 
 function buildSaleOrderRevenueMap(saleOrders) {
@@ -678,6 +698,7 @@ function normalizeTasks(
   saleOrderAmountToInvoiceMap,
   saleOrderPaymentMap,
   projectSaleOrderMap,
+  saleOrderLineToOrderMap,
   userMap,
   strategistMap,
   designerRoleListMap,
@@ -686,7 +707,9 @@ function normalizeTasks(
     const taskId = task.id;
     const projectId = task.project_id?.[0];
     const projectRecord = projectMap.get(projectId);
-    const saleOrderId = projectId ? projectSaleOrderMap.get(projectId) : undefined;
+    const taskSaleLineId = task.sale_line_id?.[0];
+    const saleOrderIdFromTask = taskSaleLineId ? saleOrderLineToOrderMap.get(taskSaleLineId) : undefined;
+    const saleOrderId = saleOrderIdFromTask ?? (projectId ? projectSaleOrderMap.get(projectId) : undefined);
     const saleOrderRecord = saleOrderId ? saleOrderMap.get(saleOrderId) : undefined;
     const invoiceSummary = saleOrderId ? saleOrderInvoiceMap.get(saleOrderId) : undefined;
     const revenueAed = saleOrderId ? Number(saleOrderRevenueMap.get(saleOrderId) ?? 0) : 0;
@@ -789,8 +812,44 @@ async function main() {
       }
     }
     console.log(`Fetched ${mergedSaleOrders.length} linked sale.order records`);
+    const taskSaleLineIds = Array.from(
+      new Set(
+        tasks
+          .map((task) => task.sale_line_id?.[0])
+          .filter((id) => Number.isFinite(id)),
+      ),
+    );
+
     const saleOrderLines = await fetchSaleOrderLines([...seenSaleOrderIds]);
+    const seenSaleOrderLineIds = new Set(saleOrderLines.map((line) => line.id));
+    const missingTaskSaleLineIds = taskSaleLineIds.filter((id) => !seenSaleOrderLineIds.has(id));
+    if (missingTaskSaleLineIds.length) {
+      const additionalTaskLines = await fetchSaleOrderLinesByIds(missingTaskSaleLineIds);
+      for (const line of additionalTaskLines) {
+        if (!seenSaleOrderLineIds.has(line.id)) {
+          saleOrderLines.push(line);
+          seenSaleOrderLineIds.add(line.id);
+        }
+      }
+    }
     console.log(`Fetched ${saleOrderLines.length} sale.order.line records`);
+    const saleOrderIdsFromLines = Array.from(
+      new Set(
+        saleOrderLines
+          .map((line) => line.order_id?.[0])
+          .filter((id) => Number.isFinite(id)),
+      ),
+    );
+    const missingSaleOrderIds = saleOrderIdsFromLines.filter((id) => !seenSaleOrderIds.has(id));
+    if (missingSaleOrderIds.length) {
+      const extraOrders = await fetchSaleOrders(missingSaleOrderIds);
+      for (const order of extraOrders) {
+        if (!seenSaleOrderIds.has(order.id)) {
+          mergedSaleOrders.push(order);
+          seenSaleOrderIds.add(order.id);
+        }
+      }
+    }
     const invoiceIds = Array.from(
       new Set(
         mergedSaleOrders
@@ -819,6 +878,7 @@ async function main() {
     const saleOrderAmountToInvoiceMap = buildSaleOrderAmountToInvoiceMap(mergedSaleOrders);
     const saleOrderPaymentMap = buildSaleOrderPaymentMap(mergedSaleOrders, accountMoves);
     const projectSaleOrderMap = buildProjectSaleOrderMap(projects, mergedSaleOrders);
+    const saleOrderLineToOrderMap = buildSaleOrderLineToOrderMap(saleOrderLines);
     const userMap = buildMap(users);
     const strategistMap = buildRoleMap(
       planningSlots,
@@ -858,6 +918,7 @@ async function main() {
       saleOrderAmountToInvoiceMap,
       saleOrderPaymentMap,
       projectSaleOrderMap,
+      saleOrderLineToOrderMap,
       userMap,
       strategistMap,
       designerRoleListMap,
