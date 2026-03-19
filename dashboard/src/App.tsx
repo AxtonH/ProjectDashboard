@@ -100,25 +100,61 @@ function App() {
 
   useEffect(() => {
     let active = true;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    const isNewerSnapshot = (current: OdooSnapshot, next: OdooSnapshot) => {
+      const currentTime = new Date(current.generatedAt).getTime();
+      const nextTime = new Date(next.generatedAt).getTime();
+      if (Number.isNaN(nextTime)) return false;
+      if (Number.isNaN(currentTime)) return true;
+      return nextTime >= currentTime;
+    };
+
+    const scheduleRetry = (delayMs: number) => {
+      if (!active) return;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
+      retryTimer = setTimeout(() => {
+        void loadLatestSnapshot();
+      }, delayMs);
+    };
 
     const loadLatestSnapshot = async () => {
       try {
-        const response = await fetch('/api/odoo-snapshot', { cache: 'no-store' });
+        const response = await fetch(`/api/odoo-snapshot?t=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) {
+          scheduleRetry(5000);
           return;
         }
         const nextSnapshot = (await response.json()) as OdooSnapshot;
+        const stale = response.headers.get('x-odoo-snapshot-stale') === 'true';
         if (active) {
-          setSnapshot(nextSnapshot);
+          setSnapshot((current) => (isNewerSnapshot(current, nextSnapshot) ? nextSnapshot : current));
+          if (stale) {
+            scheduleRetry(5000);
+          }
         }
       } catch {
-        // Fall back to bundled snapshot when API is unavailable.
+        // Fall back to bundled snapshot when API is unavailable, then retry.
+        scheduleRetry(5000);
       }
     };
 
     void loadLatestSnapshot();
+    pollTimer = setInterval(() => {
+      void loadLatestSnapshot();
+    }, 60000);
+
     return () => {
       active = false;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
+      if (pollTimer) {
+        clearInterval(pollTimer);
+      }
     };
   }, []);
 
