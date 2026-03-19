@@ -15,9 +15,6 @@ const formatCurrencyAed = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
-const toPlainText = (value: string) =>
-  value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-
 const columns: Array<{
   key: BoardColumnKey;
   label: string;
@@ -200,9 +197,6 @@ export function BoardView({
                   </p>
                   <p className="mt-2 text-xs text-slate-600">
                     {formatDate(row.startDate)} → {formatDate(row.endDate)}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-xs text-slate-600">
-                    {row.description ? toPlainText(row.description) : 'No description'}
                   </p>
                 </article>
               ))}
