@@ -279,7 +279,13 @@ export function CardView({
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())
     ? 'Unknown'
-    : lastSync.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    : lastSync.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
 
   const formatDisplayDate = (value: string | null) => {
     if (!value) return 'TBD';

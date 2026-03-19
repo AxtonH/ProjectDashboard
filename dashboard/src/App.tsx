@@ -93,6 +93,7 @@ function MarketSwitcher({
 }
 
 function App() {
+  const buildMarker = 'live-api-v2';
   const [view, setView] = useState<ViewMode>('table');
   const [market, setMarket] = useState<MarketFilter>('all');
   const [snapshot, setSnapshot] = useState<OdooSnapshot>(snapshotRaw as OdooSnapshot);
@@ -125,6 +126,9 @@ function App() {
     <div className="flex flex-wrap items-center justify-end gap-2">
       <ViewSwitcher activeView={view} onChange={setView} />
       <MarketSwitcher activeMarket={market} onChange={setMarket} />
+      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[0.7rem] font-semibold text-slate-600">
+        Build: {buildMarker}
+      </span>
     </div>
   );
 
