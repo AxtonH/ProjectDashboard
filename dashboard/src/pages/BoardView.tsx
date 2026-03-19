@@ -192,6 +192,9 @@ export function BoardView({
                 <article key={`${column.key}-${row.taskId}`} className="rounded-lg border border-white/70 bg-white p-3 shadow-sm">
                   <p className="truncate text-sm font-semibold text-slate-900">{row.taskName}</p>
                   <p className="truncate text-xs text-slate-500">{row.accountName ?? 'TBD'}</p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Sales order: {row.invoice?.label ?? '—'}
+                  </p>
                   <p className="mt-2 text-xs font-semibold text-slate-700">
                     Amount to invoice: {formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0))}
                   </p>
