@@ -19,6 +19,7 @@ const parseBoolean = (value, fallback) => {
 };
 
 const refreshOnRequest = parseBoolean(process.env.ODOO_REFRESH_ON_REQUEST, true);
+const allowStaleFallback = parseBoolean(process.env.ODOO_ALLOW_STALE_FALLBACK, false);
 let activeSync = null;
 
 const contentTypeByExtension = {
@@ -98,10 +99,17 @@ const server = createServer(async (request, response) => {
         const snapshot = await readSnapshot();
         return sendJson(response, 200, snapshot);
       } catch (error) {
+        const message = error instanceof Error ? error.message : 'unknown';
+        if (!allowStaleFallback) {
+          return sendJson(response, 503, {
+            error: 'Live Odoo sync failed. Stale fallback is disabled.',
+            detail: message,
+          });
+        }
         try {
           const fallback = await readSnapshot();
           response.setHeader('X-Odoo-Snapshot-Stale', 'true');
-          response.setHeader('X-Odoo-Snapshot-Error', error instanceof Error ? error.message : 'unknown');
+          response.setHeader('X-Odoo-Snapshot-Error', message);
           return sendJson(response, 200, fallback);
         } catch {
           return sendJson(response, 500, {
@@ -135,4 +143,5 @@ const server = createServer(async (request, response) => {
 server.listen(port, () => {
   console.log(`Server listening on ${port}`);
   console.log(`Refresh-on-request: ${refreshOnRequest ? 'enabled' : 'disabled'}`);
+  console.log(`Stale-fallback: ${allowStaleFallback ? 'enabled' : 'disabled'}`);
 });
