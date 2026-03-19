@@ -72,6 +72,47 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   return market.includes(marketFilter);
 };
 
+const isCompletedStatus = (statusName: string | null | undefined) => {
+  const value = (statusName ?? '').toLowerCase();
+  return value.includes('complete') || value.includes('done');
+};
+
+const isCanceledSalesOrder = (row: ProjectRow) => {
+  const value = (row.saleOrderState ?? '').trim().toLowerCase();
+  return value.includes('cancel');
+};
+
+const parseTime = (value: string | null | undefined) => {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
+};
+
+const shouldIncludeCompletedRow = (row: ProjectRow, now: number) => {
+  if (!isCompletedStatus(row.status?.name)) {
+    return true;
+  }
+
+  const completionTime =
+    parseTime(row.submissionDate) ??
+    parseTime(row.endDate) ??
+    parseTime(row.clientDueDate) ??
+    parseTime(row.startDate);
+
+  if (completionTime === null) {
+    return true;
+  }
+
+  const ageMs = now - completionTime;
+  const days60Ms = 60 * 24 * 60 * 60 * 1000;
+  if (ageMs <= days60Ms) {
+    return true;
+  }
+
+  const invoiceStatus = row.invoice?.status ?? 'not_invoiced';
+  return invoiceStatus !== 'invoiced';
+};
+
 export function BoardView({
   snapshot,
   viewSwitcher,
@@ -103,6 +144,7 @@ export function BoardView({
   }, []);
 
   const grouped = useMemo(() => {
+    const now = Date.now();
     const buckets: Record<BoardColumnKey, ProjectRow[]> = {
       open: [],
       progress: [],
@@ -111,6 +153,12 @@ export function BoardView({
     };
 
     for (const row of marketRows) {
+      if (isCanceledSalesOrder(row)) {
+        continue;
+      }
+      if (!shouldIncludeCompletedRow(row, now)) {
+        continue;
+      }
       const atRisk = (persistedAtRiskState[row.taskId] ?? 'No') === 'Yes';
       const key = classifyRow(row.status?.name, atRisk);
       buckets[key].push(row);
@@ -139,6 +187,11 @@ export function BoardView({
     return { buckets, amountToInvoiceByColumn };
   }, [marketRows, persistedAtRiskState]);
 
+  const displayedTaskCount = useMemo(
+    () => Object.values(grouped.buckets).reduce((total, rows) => total + rows.length, 0),
+    [grouped],
+  );
+
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())
     ? 'Unknown'
@@ -162,7 +215,7 @@ export function BoardView({
             Last sync: {formattedLastSync}
           </span>
           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-500">
-            {marketRows.length} tasks
+            {displayedTaskCount} tasks
           </span>
         </div>
       }

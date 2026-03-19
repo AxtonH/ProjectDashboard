@@ -45,7 +45,7 @@ const requiredTaskFields = [
 ];
 
 const projectFields = ['name', 'partner_id', 'sale_order_id', 'tag_ids', 'x_studio_market_2'];
-const saleOrderFields = ['name', 'invoice_status', 'project_id', 'project_ids', 'invoice_ids', 'x_studio_aed_amount_to_invoice', 'x_studio_aed_total'];
+const saleOrderFields = ['name', 'state', 'invoice_status', 'project_id', 'project_ids', 'invoice_ids', 'x_studio_aed_amount_to_invoice', 'x_studio_aed_total'];
 const saleOrderLineFields = ['order_id', 'product_uom_qty', 'qty_invoiced', 'price_subtotal', 'price_total'];
 const accountMoveFields = ['payment_state', 'state', 'move_type'];
 const userFields = ['name'];
@@ -760,6 +760,7 @@ function normalizeTasks(
             quantityInvoiced: invoiceSummary?.quantityInvoiced ?? 0,
           }
         : null,
+      saleOrderState: saleOrderRecord?.state ?? null,
       payment: paymentSummary ?? null,
       revenueAed,
       amountToInvoiceAed,

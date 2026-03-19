@@ -36,6 +36,7 @@ export type ProjectRow = {
   strategist: PersonRole | null;
   status: StatusInfo | null;
   invoice: InvoiceInfo | null;
+  saleOrderState?: string | null;
   payment?: PaymentInfo | null;
   revenueAed?: number;
   amountToInvoiceAed?: number;
