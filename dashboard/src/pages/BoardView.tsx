@@ -5,6 +5,7 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 type AtRiskValue = 'Yes' | 'No';
 type BoardColumnKey = 'open' | 'progress' | 'completed' | 'atRisk';
 type MarketFilter = 'all' | 'UAE' | 'KSA';
+type SalesOrderKey = string;
 
 const atRiskStorageKey = 'main-view-at-risk-state-v1';
 
@@ -72,6 +73,11 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   return market.includes(marketFilter);
 };
 
+const isCanceledStatus = (statusName: string | null | undefined) => {
+  const value = (statusName ?? '').toLowerCase();
+  return value.includes('cancel');
+};
+
 const isCompletedStatus = (statusName: string | null | undefined) => {
   const value = (statusName ?? '').toLowerCase();
   return value.includes('complete') || value.includes('done');
@@ -123,7 +129,10 @@ export function BoardView({
   marketFilter?: MarketFilter;
 }) {
   const baseRows: ProjectRow[] = snapshot.rows ?? [];
-  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [baseRows, marketFilter]);
+  const marketRows = useMemo(
+    () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
+    [baseRows, marketFilter],
+  );
 
   const persistedAtRiskState = useMemo<Record<number, AtRiskValue>>(() => {
     if (typeof window === 'undefined') return {};
@@ -153,7 +162,7 @@ export function BoardView({
     };
 
     for (const row of marketRows) {
-      if (isCanceledSalesOrder(row)) {
+      if (isCanceledStatus(row.status?.name) || isCanceledSalesOrder(row)) {
         continue;
       }
       if (!shouldIncludeCompletedRow(row, now)) {
@@ -180,11 +189,51 @@ export function BoardView({
       completed: 0,
       atRisk: 0,
     };
+    const uniqueSalesOrdersByColumn: Record<BoardColumnKey, number> = {
+      open: 0,
+      progress: 0,
+      completed: 0,
+      atRisk: 0,
+    };
+    const seenSalesOrdersGlobal = new Set<SalesOrderKey>();
+
+    const getSalesOrderKey = (row: ProjectRow): SalesOrderKey | null => {
+      if (row.invoice?.id) return String(row.invoice.id);
+      if (row.invoice?.label) return `label:${row.invoice.label}`;
+      return null;
+    };
+
     for (const key of Object.keys(buckets) as BoardColumnKey[]) {
-      amountToInvoiceByColumn[key] = buckets[key].reduce((sum, row) => sum + Number(row.amountToInvoiceAed ?? 0), 0);
+      const seenSalesOrders = new Set<SalesOrderKey>();
+      let columnAmount = 0;
+
+      for (const row of buckets[key]) {
+        const soKey = getSalesOrderKey(row);
+        if (!soKey || seenSalesOrders.has(soKey)) {
+          continue;
+        }
+
+        seenSalesOrders.add(soKey);
+        seenSalesOrdersGlobal.add(soKey);
+        columnAmount += Number(row.amountToInvoiceAed ?? 0);
+      }
+
+      amountToInvoiceByColumn[key] = columnAmount;
+      uniqueSalesOrdersByColumn[key] = seenSalesOrders.size;
     }
 
-    return { buckets, amountToInvoiceByColumn };
+    return {
+      buckets,
+      amountToInvoiceByColumn,
+      uniqueSalesOrdersByColumn,
+      uniqueSalesOrdersTotal: seenSalesOrdersGlobal.size,
+      amountToInvoiceTotal: (
+        amountToInvoiceByColumn.open +
+        amountToInvoiceByColumn.progress +
+        amountToInvoiceByColumn.completed +
+        amountToInvoiceByColumn.atRisk
+      ),
+    };
   }, [marketRows, persistedAtRiskState]);
 
   const displayedTaskCount = useMemo(
@@ -217,6 +266,12 @@ export function BoardView({
           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-500">
             {displayedTaskCount} tasks
           </span>
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-600">
+            Unique SOs: {grouped.uniqueSalesOrdersTotal}
+          </span>
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-semibold text-emerald-700">
+            Total to invoice: {formatCurrencyAed(grouped.amountToInvoiceTotal)}
+          </span>
         </div>
       }
     >
@@ -228,7 +283,10 @@ export function BoardView({
                 <h2 className="text-sm font-semibold">{column.label}</h2>
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-white/70 px-2 py-0.5 text-[0.7rem] font-semibold">
-                    Amount to invoice: {formatCurrencyAed(grouped.amountToInvoiceByColumn[column.key])}
+                    To invoice (unique SOs): {formatCurrencyAed(grouped.amountToInvoiceByColumn[column.key])}
+                  </span>
+                  <span className="rounded-full bg-white/70 px-2 py-0.5 text-[0.7rem] font-semibold">
+                    Unique SOs: {grouped.uniqueSalesOrdersByColumn[column.key]}
                   </span>
                   <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs font-semibold">
                     {grouped.buckets[column.key].length}
@@ -244,9 +302,6 @@ export function BoardView({
                   <p className="truncate text-xs text-slate-500">{row.accountName ?? 'TBD'}</p>
                   <p className="mt-1 text-xs text-slate-600">
                     Sales order: {row.invoice?.label ?? '—'}
-                  </p>
-                  <p className="mt-2 text-xs font-semibold text-slate-700">
-                    Amount to invoice: {formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0))}
                   </p>
                   <p className="mt-2 text-xs text-slate-600">
                     {formatDate(row.startDate)} → {formatDate(row.endDate)}

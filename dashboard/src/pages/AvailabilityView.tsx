@@ -17,7 +17,7 @@ type PersonAvailability = {
 const isPlanningStatus = (statusName: string | null | undefined) => {
   if (!statusName) return true;
   const value = statusName.toLowerCase();
-  return !(value.includes('complete') || value.includes('done'));
+  return !(value.includes('complete') || value.includes('done') || value.includes('cancel'));
 };
 
 const parseDate = (value: string | null) => {
@@ -45,6 +45,11 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   return market.includes(marketFilter);
 };
 
+const isCanceledStatus = (statusName: string | null | undefined) => {
+  const value = (statusName ?? '').toLowerCase();
+  return value.includes('cancel');
+};
+
 const getWorkload = (projectsThisWeek: number): WorkloadLabel => {
   if (projectsThisWeek >= 3) return 'Overload';
   if (projectsThisWeek >= 2) return 'High';
@@ -69,7 +74,10 @@ export function AvailabilityView({
   marketFilter?: MarketFilter;
 }) {
   const baseRows: ProjectRow[] = snapshot.rows ?? [];
-  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [baseRows, marketFilter]);
+  const marketRows = useMemo(
+    () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
+    [baseRows, marketFilter],
+  );
 
   const availabilityCards = useMemo<PersonAvailability[]>(() => {
     const marketKey = marketFilter === 'UAE' ? 'uae' : (marketFilter === 'KSA' ? 'ksa' : 'all');

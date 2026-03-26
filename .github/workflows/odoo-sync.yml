@@ -15,13 +15,35 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      ODOO_URL: ${{ secrets.ODOO_URL }}
+      ODOO_DB: ${{ secrets.ODOO_DB }}
+      ODOO_USERNAME: ${{ secrets.ODOO_USERNAME }}
+      ODOO_PASSWORD: ${{ secrets.ODOO_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: main
 
+      - name: Validate Odoo Secrets
+        id: validate
+        run: |
+          missing=()
+          [[ -z "${ODOO_URL}" ]] && missing+=("ODOO_URL")
+          [[ -z "${ODOO_DB}" ]] && missing+=("ODOO_DB")
+          [[ -z "${ODOO_USERNAME}" ]] && missing+=("ODOO_USERNAME")
+          [[ -z "${ODOO_PASSWORD}" ]] && missing+=("ODOO_PASSWORD")
+
+          if (( ${#missing[@]} > 0 )); then
+            echo "::warning::Skipping Odoo sync: missing GitHub secrets: ${missing[*]}"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Node
+        if: steps.validate.outputs.ready == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -29,19 +51,17 @@ jobs:
           cache-dependency-path: dashboard/package-lock.json
 
       - name: Install Dependencies
+        if: steps.validate.outputs.ready == 'true'
         run: npm ci
         working-directory: dashboard
 
       - name: Fetch Odoo Snapshot
+        if: steps.validate.outputs.ready == 'true'
         run: npm run fetch:odoo
         working-directory: dashboard
-        env:
-          ODOO_URL: ${{ secrets.ODOO_URL }}
-          ODOO_DB: ${{ secrets.ODOO_DB }}
-          ODOO_USERNAME: ${{ secrets.ODOO_USERNAME }}
-          ODOO_PASSWORD: ${{ secrets.ODOO_PASSWORD }}
 
       - name: Commit and Push if Changed
+        if: steps.validate.outputs.ready == 'true'
         run: |
           if [[ -n "$(git status --porcelain)" ]]; then
             git config user.name "github-actions[bot]"

@@ -172,6 +172,11 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   return market.includes(marketFilter);
 };
 
+const isCanceledStatus = (statusName: string | null | undefined) => {
+  const value = (statusName ?? '').toLowerCase();
+  return value.includes('cancel');
+};
+
 const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) => {
   if (key === 'account') {
     return `${row.accountName ?? ''}${row.clientAccount ? ` / ${row.clientAccount}` : ''}`.trim() || '—';
@@ -270,7 +275,10 @@ export function MainView({
     });
   }, [baseRows]);
 
-  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [baseRows, marketFilter]);
+  const marketRows = useMemo(
+    () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
+    [baseRows, marketFilter],
+  );
 
   const columnFilterOptions = useMemo(() => {
     const options: Record<string, string[]> = {};

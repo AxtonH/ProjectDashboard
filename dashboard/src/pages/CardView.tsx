@@ -99,6 +99,11 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   return market.includes(marketFilter);
 };
 
+const isCanceledStatus = (statusName: string | null | undefined) => {
+  const value = (statusName ?? '').toLowerCase();
+  return value.includes('cancel');
+};
+
 type FilterOption = { label: string; value: string };
 
 function FilterChip({
@@ -196,7 +201,10 @@ export function CardView({
       return {};
     }
   }, []);
-  const marketRows = useMemo(() => baseRows.filter((row) => matchesMarket(row, marketFilter)), [baseRows, marketFilter]);
+  const marketRows = useMemo(
+    () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
+    [baseRows, marketFilter],
+  );
 
   const designerOptions = useMemo(
     () =>
