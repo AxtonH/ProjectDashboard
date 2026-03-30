@@ -7,7 +7,9 @@ type SortDirection = 'asc' | 'desc';
 type AtRiskValue = 'Yes' | 'No';
 type PriorityValue = 'High' | 'Med' | 'Low' | '—';
 type InvoicePercentOverrideValue = number | null;
+type CompletionRateValue = number | null;
 type MarketFilter = 'all' | 'UAE' | 'KSA';
+type ConfirmationFilter = 'confirmed' | 'notConfirmed';
 type ColumnFilterState = Record<string, string>;
 type DateRangeFilterState = {
   startDateFrom: string;
@@ -26,6 +28,7 @@ const formatCurrencyAed = (value: number) =>
 const atRiskStorageKey = 'main-view-at-risk-state-v1';
 const priorityStorageKey = 'main-view-priority-state-v1';
 const invoicePercentStorageKey = 'main-view-invoice-percent-state-v1';
+const completionRateStorageKey = 'main-view-completion-rate-state-v1';
 
 const statusTone = (value?: string | null) => {
   if (!value) return 'border-[#e1e6ef] bg-[#f7f8fb] text-[#626f82]';
@@ -101,6 +104,7 @@ const columns: Array<{
   { key: 'strategist', label: 'Strategist', width: '150px' },
   { key: 'assignmentType', label: 'Assignment Type', width: '160px' },
   { key: 'priority', label: 'Priority', width: '120px' },
+  { key: 'completionRate', label: 'Completion Rate', width: '170px' },
   { key: 'status', label: 'Status', sortKey: 'status' as SortKey, width: '150px' },
   { key: 'invoice', label: 'Invoice', width: '110px' },
   { key: 'invoicingPercent', label: 'Invoicing %', width: '170px' },
@@ -152,6 +156,8 @@ const toInitialPriorityState = (rows: ProjectRow[]) =>
   Object.fromEntries(rows.map((row) => [row.taskId, '—'])) as Record<number, PriorityValue>;
 const toInitialInvoicePercentState = (rows: ProjectRow[]) =>
   Object.fromEntries(rows.map((row) => [row.taskId, null])) as Record<number, InvoicePercentOverrideValue>;
+const toInitialCompletionRateState = (rows: ProjectRow[]) =>
+  Object.fromEntries(rows.map((row) => [row.taskId, null])) as Record<number, CompletionRateValue>;
 const initialColumnFilters = Object.fromEntries(columns.map((column) => [column.key, ''])) as ColumnFilterState;
 const initialDateRangeFilters: DateRangeFilterState = {
   startDateFrom: '',
@@ -189,6 +195,13 @@ const isCanceledStatus = (statusName: string | null | undefined) => {
   return value.includes('cancel');
 };
 
+const isConfirmedRow = (row: ProjectRow) => row.saleOrderState === 'sale';
+
+const isNotConfirmedRow = (row: ProjectRow) => {
+  if (!row.saleOrderState) return true;
+  return row.saleOrderState === 'draft' || row.saleOrderState === 'sent';
+};
+
 const getAssignmentType = (row: ProjectRow) => {
   const hasDesigner = ((row.designers ?? []).length > 0) || Boolean(row.designer);
   const hasStrategist = Boolean(row.strategist);
@@ -218,12 +231,18 @@ const getInvoicePercentLabel = (row: ProjectRow, overrideValue: InvoicePercentOv
   return typeof overrideValue === 'number' ? `${value}% (manual)` : `${value}% (auto)`;
 };
 
+const getCompletionRateLabel = (value: CompletionRateValue) => {
+  if (typeof value !== 'number') return '—';
+  return `${Math.max(0, Math.min(100, Math.round(value)))}%`;
+};
+
 const getColumnValue = (
   row: ProjectRow,
   key: string,
   rowAtRisk: AtRiskValue,
   rowPriority: PriorityValue,
   rowInvoicePercentOverride: InvoicePercentOverrideValue,
+  rowCompletionRate: CompletionRateValue,
 ) => {
   if (key === 'account') {
     return `${row.accountName ?? ''}${row.clientAccount ? ` / ${row.clientAccount}` : ''}`.trim() || '—';
@@ -250,6 +269,9 @@ const getColumnValue = (
   }
   if (key === 'priority') {
     return rowPriority;
+  }
+  if (key === 'completionRate') {
+    return getCompletionRateLabel(rowCompletionRate);
   }
   if (key === 'status') {
     return row.status?.name ?? '—';
@@ -321,6 +343,7 @@ export function MainView({
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<number, boolean>>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFilterState>(initialColumnFilters);
   const [dateRangeFilters, setDateRangeFilters] = useState<DateRangeFilterState>(initialDateRangeFilters);
+  const [confirmationFilter, setConfirmationFilter] = useState<ConfirmationFilter>('confirmed');
   const [priorityState, setPriorityState] = useState<Record<number, PriorityValue>>(() => {
     const initialPriorityState = toInitialPriorityState(baseRows);
     if (typeof window === 'undefined') return initialPriorityState;
@@ -361,6 +384,25 @@ export function MainView({
       return initialInvoicePercentState;
     }
   });
+  const [completionRateState, setCompletionRateState] = useState<Record<number, CompletionRateValue>>(() => {
+    const initialCompletionRateState = toInitialCompletionRateState(baseRows);
+    if (typeof window === 'undefined') return initialCompletionRateState;
+    try {
+      const saved = window.localStorage.getItem(completionRateStorageKey);
+      if (!saved) return initialCompletionRateState;
+      const parsed = JSON.parse(saved) as Record<string, number | null>;
+      const merged = { ...initialCompletionRateState };
+      for (const row of baseRows) {
+        const savedValue = parsed[String(row.taskId)];
+        if (savedValue === null || (typeof savedValue === 'number' && Number.isFinite(savedValue))) {
+          merged[row.taskId] = savedValue;
+        }
+      }
+      return merged;
+    } catch {
+      return initialCompletionRateState;
+    }
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -376,6 +418,11 @@ export function MainView({
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(invoicePercentStorageKey, JSON.stringify(invoicePercentOverrideState));
   }, [invoicePercentOverrideState]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(completionRateStorageKey, JSON.stringify(completionRateState));
+  }, [completionRateState]);
 
   useEffect(() => {
     setAtRiskState((prev) => {
@@ -398,34 +445,56 @@ export function MainView({
     });
   }, [baseRows]);
 
+  useEffect(() => {
+    setCompletionRateState((prev) => {
+      const next = { ...toInitialCompletionRateState(baseRows), ...prev };
+      return next;
+    });
+  }, [baseRows]);
+
   const marketRows = useMemo(
     () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
     [baseRows, marketFilter],
   );
+  const confirmationRows = useMemo(() => {
+    if (confirmationFilter === 'confirmed') {
+      return marketRows.filter((row) => isConfirmedRow(row));
+    }
+    return marketRows.filter((row) => isNotConfirmedRow(row));
+  }, [marketRows, confirmationFilter]);
 
   const columnFilterOptions = useMemo(() => {
     const options: Record<string, string[]> = {};
     columns.forEach((column) => {
       const values = Array.from(
         new Set(
-          marketRows.map((row) => {
+          confirmationRows.map((row) => {
             const rowAtRisk = atRiskState[row.taskId] ?? 'No';
             const rowPriority = priorityState[row.taskId] ?? '—';
             const rowInvoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
-            return getColumnValue(row, column.key, rowAtRisk, rowPriority, rowInvoicePercentOverride);
+            const rowCompletionRate = completionRateState[row.taskId] ?? null;
+            return getColumnValue(
+              row,
+              column.key,
+              rowAtRisk,
+              rowPriority,
+              rowInvoicePercentOverride,
+              rowCompletionRate,
+            );
           }),
         ),
       ).sort((a, b) => a.localeCompare(b));
       options[column.key] = values;
     });
     return options;
-  }, [atRiskState, marketRows, priorityState, invoicePercentOverrideState]);
+  }, [atRiskState, confirmationRows, priorityState, invoicePercentOverrideState, completionRateState]);
 
   const filteredRows = useMemo(() => {
-    return marketRows.filter((row) => {
+    return confirmationRows.filter((row) => {
       const rowAtRisk = atRiskState[row.taskId] ?? 'No';
       const rowPriority = priorityState[row.taskId] ?? '—';
       const rowInvoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
+      const rowCompletionRate = completionRateState[row.taskId] ?? null;
       const startTime = toTimestamp(row.startDate);
       const endTime = toTimestamp(row.endDate);
       const startFrom = toDayStart(dateRangeFilters.startDateFrom);
@@ -443,14 +512,22 @@ export function MainView({
         if (column.key === 'startDate' || column.key === 'endDate') return true;
         const query = (columnFilters[column.key] ?? '').trim().toLowerCase();
         if (!query) return true;
-        return getColumnValue(row, column.key, rowAtRisk, rowPriority, rowInvoicePercentOverride)
+        return getColumnValue(row, column.key, rowAtRisk, rowPriority, rowInvoicePercentOverride, rowCompletionRate)
           .toLowerCase()
           .includes(query);
       });
 
       return matchesDateRanges && matchesColumnFilters;
     });
-  }, [atRiskState, columnFilters, dateRangeFilters, marketRows, priorityState, invoicePercentOverrideState]);
+  }, [
+    atRiskState,
+    columnFilters,
+    dateRangeFilters,
+    confirmationRows,
+    priorityState,
+    invoicePercentOverrideState,
+    completionRateState,
+  ]);
 
   const sortedRows = useMemo(() => {
     const multiplier = sortState.direction === 'asc' ? 1 : -1;
@@ -498,6 +575,10 @@ export function MainView({
     setInvoicePercentOverrideState((prev) => ({ ...prev, [taskId]: value }));
   };
 
+  const setCompletionRate = (taskId: number, value: CompletionRateValue) => {
+    setCompletionRateState((prev) => ({ ...prev, [taskId]: value }));
+  };
+
   const toggleDescription = (taskId: number) => {
     setExpandedDescriptions((prev) => ({
       ...prev,
@@ -522,9 +603,36 @@ export function MainView({
       title="Main Project View"
       actions={
         <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
+          <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setConfirmationFilter('confirmed')}
+              className={`rounded-full px-3 py-1.5 text-[0.72rem] font-semibold tracking-[0.01em] transition ${
+                confirmationFilter === 'confirmed'
+                  ? 'bg-slate-900 text-white shadow-[0_1px_2px_rgba(15,23,42,0.25)]'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              Confirmed
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmationFilter('notConfirmed')}
+              className={`rounded-full px-3 py-1.5 text-[0.72rem] font-semibold tracking-[0.01em] transition ${
+                confirmationFilter === 'notConfirmed'
+                  ? 'bg-slate-900 text-white shadow-[0_1px_2px_rgba(15,23,42,0.25)]'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              Not Confirmed
+            </button>
+          </div>
           {viewSwitcher}
           <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
             Last sync: {formattedLastSync}
+          </span>
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-500">
+            {confirmationFilter === 'confirmed' ? 'Confirmed' : 'Not Confirmed'}
           </span>
           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-500">
             {sortedRows.length} tasks
@@ -534,7 +642,7 @@ export function MainView({
     >
       <section className="space-y-1" style={{ ['--filters-offset' as string]: '64px' }}>
         <div className="overflow-x-auto overflow-y-auto rounded-[20px] border border-divider bg-white shadow-sm max-h-[calc(100vh-190px)]">
-            <table className="min-w-[2810px] table-fixed border-collapse">
+            <table className="min-w-[2990px] table-fixed border-collapse">
               <thead className="sticky top-0 z-40 bg-[#f9fafc] text-left text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-400 shadow-[0_1px_0_0_#eceff3]">
                 <tr>
                   {columns.map((column) => (
@@ -640,6 +748,7 @@ export function MainView({
                   const riskValue = atRiskState[row.taskId] ?? 'No';
                   const priorityValue = priorityState[row.taskId] ?? '—';
                   const invoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
+                  const completionRateValue = completionRateState[row.taskId] ?? null;
                   const autoInvoicePercent = getAutoInvoicePercent(row);
                   const effectiveInvoicePercent = getEffectiveInvoicePercent(row, invoicePercentOverride);
                   const riskRoleTone =
@@ -718,6 +827,39 @@ export function MainView({
                           <option value="Med">Med</option>
                           <option value="Low">Low</option>
                         </select>
+                      </td>
+                      <td className="px-5 py-3" style={columnStyles.completionRate}>
+                        <div className="space-y-1">
+                          <div className="text-xs font-semibold text-slate-700">{getCompletionRateLabel(completionRateValue)}</div>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              step={1}
+                              value={completionRateValue ?? ''}
+                              placeholder="0-100"
+                              onChange={(event) => {
+                                const nextValue = event.target.value.trim();
+                                if (nextValue === '') {
+                                  setCompletionRate(row.taskId, null);
+                                  return;
+                                }
+                                const parsed = Number(nextValue);
+                                if (!Number.isFinite(parsed)) return;
+                                setCompletionRate(row.taskId, Math.max(0, Math.min(100, parsed)));
+                              }}
+                              className="w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 focus:border-slate-300 focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setCompletionRate(row.taskId, null)}
+                              className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-3" style={columnStyles.status}>
                         {row.status ? (
