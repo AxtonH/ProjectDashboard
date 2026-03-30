@@ -34,6 +34,8 @@ export type ProjectRow = {
   designer: PersonRole | null;
   designers?: PersonRole[];
   strategist: PersonRole | null;
+  clientSuccess?: PersonRole | null;
+  assignees?: PersonRole[];
   status: StatusInfo | null;
   invoice: InvoiceInfo | null;
   saleOrderState?: string | null;
@@ -59,6 +61,11 @@ export type OdooSnapshot = {
     creativeEmployees?: number;
   };
   rows: ProjectRow[];
+  creativeEmployees?: {
+    id: number;
+    name: string;
+    department?: string;
+  }[];
   designerAvailability?: {
     id: number;
     name: string;
@@ -67,26 +74,77 @@ export type OdooSnapshot = {
     hoursPast7Days?: number;
   }[];
   designerAvailabilityByMarket?: {
-    all: {
-      id: number;
-      name: string;
-      projectsPast7Days: number;
-      projectNamesPast7Days: string[];
-      hoursPast7Days?: number;
-    }[];
-    uae: {
-      id: number;
-      name: string;
-      projectsPast7Days: number;
-      projectNamesPast7Days: string[];
-      hoursPast7Days?: number;
-    }[];
-    ksa: {
-      id: number;
-      name: string;
-      projectsPast7Days: number;
-      projectNamesPast7Days: string[];
-      hoursPast7Days?: number;
-    }[];
+    all:
+      | {
+          id: number;
+          name: string;
+          projectsPast7Days: number;
+          projectNamesPast7Days: string[];
+          hoursPast7Days?: number;
+        }[]
+      | {
+          past7Days: {
+            id: number;
+            name: string;
+            projectsPast7Days: number;
+            projectNamesPast7Days: string[];
+            hoursPast7Days?: number;
+          }[];
+          next7Days: {
+            id: number;
+            name: string;
+            projectsPast7Days: number;
+            projectNamesPast7Days: string[];
+            hoursPast7Days?: number;
+          }[];
+        };
+    uae:
+      | {
+          id: number;
+          name: string;
+          projectsPast7Days: number;
+          projectNamesPast7Days: string[];
+          hoursPast7Days?: number;
+        }[]
+      | {
+          past7Days: {
+            id: number;
+            name: string;
+            projectsPast7Days: number;
+            projectNamesPast7Days: string[];
+            hoursPast7Days?: number;
+          }[];
+          next7Days: {
+            id: number;
+            name: string;
+            projectsPast7Days: number;
+            projectNamesPast7Days: string[];
+            hoursPast7Days?: number;
+          }[];
+        };
+    ksa:
+      | {
+          id: number;
+          name: string;
+          projectsPast7Days: number;
+          projectNamesPast7Days: string[];
+          hoursPast7Days?: number;
+        }[]
+      | {
+          past7Days: {
+            id: number;
+            name: string;
+            projectsPast7Days: number;
+            projectNamesPast7Days: string[];
+            hoursPast7Days?: number;
+          }[];
+          next7Days: {
+            id: number;
+            name: string;
+            projectsPast7Days: number;
+            projectNamesPast7Days: string[];
+            hoursPast7Days?: number;
+          }[];
+        };
   };
 };

@@ -1,9 +1,10 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
 type WorkloadLabel = 'Available' | 'Acceptable' | 'High' | 'Overload';
 type MarketFilter = 'all' | 'UAE' | 'KSA';
+type WeekWindow = 'past7' | 'next7';
 
 type PersonAvailability = {
   id: number;
@@ -14,10 +15,12 @@ type PersonAvailability = {
   projects: string[];
 };
 
-const isPlanningStatus = (statusName: string | null | undefined) => {
-  if (!statusName) return true;
-  const value = statusName.toLowerCase();
-  return !(value.includes('complete') || value.includes('done') || value.includes('cancel'));
+type AvailabilityEntry = {
+  id: number;
+  name: string;
+  projectsPast7Days: number;
+  projectNamesPast7Days: string[];
+  hoursPast7Days?: number;
 };
 
 const parseDate = (value: string | null) => {
@@ -27,15 +30,12 @@ const parseDate = (value: string | null) => {
   return Number.isNaN(time) ? null : time;
 };
 
-const overlapsPast7Days = (row: ProjectRow) => {
-  const now = Date.now();
-  const windowStart = now - 7 * 24 * 60 * 60 * 1000;
+const overlapsWindow = (row: ProjectRow, windowStart: number, windowEnd: number) => {
   const start = parseDate(row.startDate);
   const end = parseDate(row.endDate);
-
-  if (start !== null && end !== null) return start <= now && end >= windowStart;
-  if (start !== null) return start >= windowStart && start <= now;
-  if (end !== null) return end >= windowStart && end <= now;
+  if (start !== null && end !== null) return start <= windowEnd && end >= windowStart;
+  if (start !== null) return start >= windowStart && start <= windowEnd;
+  if (end !== null) return end >= windowStart && end <= windowEnd;
   return false;
 };
 
@@ -64,6 +64,22 @@ function workloadStyle(workload: WorkloadLabel) {
   return 'border-rose-300 bg-rose-200 text-rose-900';
 }
 
+const resolveWindowEntries = (
+  snapshot: OdooSnapshot,
+  marketFilter: MarketFilter,
+  weekWindow: WeekWindow,
+): AvailabilityEntry[] => {
+  const marketKey = marketFilter === 'UAE' ? 'uae' : marketFilter === 'KSA' ? 'ksa' : 'all';
+  const byMarket = snapshot.designerAvailabilityByMarket?.[marketKey];
+  if (byMarket && !Array.isArray(byMarket)) {
+    return weekWindow === 'past7' ? byMarket.past7Days : byMarket.next7Days;
+  }
+  if (Array.isArray(byMarket)) {
+    return byMarket;
+  }
+  return snapshot.designerAvailability ?? [];
+};
+
 export function AvailabilityView({
   snapshot,
   viewSwitcher,
@@ -73,6 +89,10 @@ export function AvailabilityView({
   viewSwitcher?: ReactNode;
   marketFilter?: MarketFilter;
 }) {
+  const [weekWindow, setWeekWindow] = useState<WeekWindow>('past7');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [includeAllDesigners, setIncludeAllDesigners] = useState(true);
+
   const baseRows: ProjectRow[] = snapshot.rows ?? [];
   const marketRows = useMemo(
     () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
@@ -80,47 +100,84 @@ export function AvailabilityView({
   );
 
   const availabilityCards = useMemo<PersonAvailability[]>(() => {
-    const marketKey = marketFilter === 'UAE' ? 'uae' : (marketFilter === 'KSA' ? 'ksa' : 'all');
-    const sourceCards = snapshot.designerAvailabilityByMarket?.[marketKey] ?? snapshot.designerAvailability ?? [];
-    if (sourceCards.length > 0) {
-      return sourceCards.map((entry) => ({
-        id: entry.id,
-        name: entry.name,
-        projectsThisWeek: entry.projectsPast7Days,
-        hoursThisWeek: Number(entry.hoursPast7Days ?? 0),
-        projects: entry.projectNamesPast7Days,
-        workload: getWorkload(entry.projectsPast7Days),
-      }));
-    }
+    const sourceCards = resolveWindowEntries(snapshot, marketFilter, weekWindow);
+    const map = new Map(
+      sourceCards.map((entry) => [
+        entry.id,
+        {
+          id: entry.id,
+          name: entry.name,
+          projectsThisWeek: entry.projectsPast7Days,
+          hoursThisWeek: Number(entry.hoursPast7Days ?? 0),
+          projects: entry.projectNamesPast7Days,
+          workload: getWorkload(entry.projectsPast7Days),
+        },
+      ]),
+    );
 
-    const map = new Map<number, { id: number; name: string; projects: Set<string> }>();
-    for (const row of marketRows) {
-      const designers = (row.designers ?? []).length > 0 ? (row.designers ?? []) : (row.designer ? [row.designer] : []);
-      if (designers.length === 0) continue;
-      for (const designer of designers) {
-        if (!map.has(designer.id)) {
-          map.set(designer.id, { id: designer.id, name: designer.name, projects: new Set() });
-        }
-        if (isPlanningStatus(row.status?.name) && overlapsPast7Days(row)) {
-          map.get(designer.id)?.projects.add(row.parentProjectName ?? row.taskName);
+    if (!sourceCards.length) {
+      const now = Date.now();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      const windowStart = weekWindow === 'past7' ? now - sevenDaysMs : now;
+      const windowEnd = weekWindow === 'past7' ? now : now + sevenDaysMs;
+
+      for (const row of marketRows) {
+        const designers = (row.designers ?? []).length > 0 ? (row.designers ?? []) : row.designer ? [row.designer] : [];
+        if (!designers.length || !overlapsWindow(row, windowStart, windowEnd)) continue;
+        for (const designer of designers) {
+          if (!map.has(designer.id)) {
+            map.set(designer.id, {
+              id: designer.id,
+              name: designer.name,
+              projectsThisWeek: 0,
+              hoursThisWeek: 0,
+              projects: [],
+              workload: 'Available',
+            });
+          }
+          const current = map.get(designer.id);
+          if (!current) continue;
+          const projectName = row.parentProjectName ?? row.taskName;
+          if (!current.projects.includes(projectName)) {
+            current.projects.push(projectName);
+            current.projectsThisWeek = current.projects.length;
+            current.workload = getWorkload(current.projectsThisWeek);
+          }
         }
       }
     }
 
+    if (includeAllDesigners) {
+      for (const person of snapshot.creativeEmployees ?? []) {
+        if (!map.has(person.id)) {
+          map.set(person.id, {
+            id: person.id,
+            name: person.name,
+            projectsThisWeek: 0,
+            hoursThisWeek: 0,
+            projects: [],
+            workload: 'Available',
+          });
+        }
+      }
+    }
+
+    const normalizedSearch = searchTerm.trim().toLowerCase();
     return Array.from(map.values())
       .map((entry) => ({
-        id: entry.id,
-        name: entry.name,
-        projectsThisWeek: entry.projects.size,
-        hoursThisWeek: 0,
-        projects: Array.from(entry.projects).sort((a, b) => a.localeCompare(b)),
-        workload: getWorkload(entry.projects.size),
+        ...entry,
+        projects: [...entry.projects].sort((a, b) => a.localeCompare(b)),
       }))
+      .filter((entry) => {
+        if (!normalizedSearch) return true;
+        return entry.name.toLowerCase().includes(normalizedSearch);
+      })
       .sort((a, b) => {
         if (b.projectsThisWeek !== a.projectsThisWeek) return b.projectsThisWeek - a.projectsThisWeek;
+        if (b.hoursThisWeek !== a.hoursThisWeek) return b.hoursThisWeek - a.hoursThisWeek;
         return a.name.localeCompare(b.name);
       });
-  }, [marketFilter, marketRows, snapshot.designerAvailability, snapshot.designerAvailabilityByMarket]);
+  }, [snapshot, marketFilter, weekWindow, marketRows, includeAllDesigners, searchTerm]);
 
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())
@@ -133,10 +190,12 @@ export function AvailabilityView({
         minute: '2-digit',
       });
 
+  const windowLabel = weekWindow === 'past7' ? 'Past 7 days' : 'Upcoming 7 days';
+
   return (
     <AppShell
       title="Designer Availability View"
-      description="One card per designer from planning slots, with distinct project count over the past 7 days."
+      description="One card per designer from planning slots."
       actions={
         <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
           {viewSwitcher}
@@ -150,8 +209,46 @@ export function AvailabilityView({
       }
     >
       <section className="space-y-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+            <button
+              type="button"
+              className={`rounded-full px-3 py-1.5 text-[0.72rem] font-semibold ${
+                weekWindow === 'past7' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              onClick={() => setWeekWindow('past7')}
+            >
+              Past 7 days
+            </button>
+            <button
+              type="button"
+              className={`rounded-full px-3 py-1.5 text-[0.72rem] font-semibold ${
+                weekWindow === 'next7' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              onClick={() => setWeekWindow('next7')}
+            >
+              Upcoming 7 days
+            </button>
+          </div>
+          <input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Search designer..."
+            className="w-56 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-slate-300 focus:outline-none"
+          />
+          <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+            <input
+              type="checkbox"
+              checked={includeAllDesigners}
+              onChange={(event) => setIncludeAllDesigners(event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-300"
+            />
+            Include all Creative designers
+          </label>
+        </div>
+
         <p className="text-sm text-slate-600">
-          Counts are distinct projects in planning over the past 7 days.
+          Showing {windowLabel} planning load based on distinct projects.
         </p>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -163,14 +260,14 @@ export function AvailabilityView({
               <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-80">Designer</p>
               <h2 className="mt-1 text-base font-bold leading-tight">{person.name}</h2>
               <p className="mt-2 text-sm font-semibold">
-                Projects this week: <span className="text-lg">{person.projectsThisWeek}</span>
+                Projects: <span className="text-lg">{person.projectsThisWeek}</span>
               </p>
               <p className="mt-1 text-sm font-semibold">
-                Hours this week: <span className="text-lg">{person.hoursThisWeek.toFixed(1)}</span>
+                Hours: <span className="text-lg">{person.hoursThisWeek.toFixed(1)}</span>
               </p>
               <p className="mt-1 text-sm font-bold">{person.workload}</p>
               <p className="mt-3 line-clamp-2 text-xs opacity-85">
-                {person.projects.length > 0 ? person.projects.join(', ') : 'No projects in current week'}
+                {person.projects.length > 0 ? person.projects.join(', ') : 'No projects in selected window'}
               </p>
             </article>
           ))}

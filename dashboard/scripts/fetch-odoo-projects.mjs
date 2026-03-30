@@ -257,6 +257,20 @@ async function fetchCreativeEmployees() {
   });
 }
 
+function normalizeCreativeEmployees(employees) {
+  const map = new Map();
+  for (const employee of employees) {
+    const resourceId = employee.resource_id?.[0];
+    if (!resourceId) continue;
+    const name = employee.name ?? employee.resource_id?.[1] ?? 'Unknown';
+    const department = employee.department_id?.[1] ?? null;
+    if (!map.has(resourceId)) {
+      map.set(resourceId, { id: resourceId, name, department });
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function buildMap(records) {
   return new Map(records.map((record) => [record.id, record]));
 }
@@ -622,12 +636,25 @@ function prorateHoursToWindow(allocatedHours, start, end, windowStart, windowEnd
   return allocatedHours * (overlapMs / totalMs);
 }
 
-function buildCreativeAvailability(planningSlots, projectMap, allowedProjectIds, marketFilter = 'all') {
-  const now = Date.now();
-  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-  const windowStart = now - sevenDaysMs;
-  const windowEnd = now;
+function buildCreativeAvailability(
+  planningSlots,
+  projectMap,
+  allowedProjectIds,
+  marketFilter = 'all',
+  windowStart,
+  windowEnd,
+  allDesigners = [],
+) {
   const map = new Map();
+
+  for (const person of allDesigners) {
+    map.set(person.id, {
+      id: person.id,
+      name: person.name,
+      projectsPast7Days: new Set(),
+      hoursPast7Days: 0,
+    });
+  }
 
   for (const slot of planningSlots) {
     const projectId = slot.project_id?.[0];
@@ -730,6 +757,17 @@ function normalizeTasks(
     }
     const normalizedDesigners = Array.from(designersMap.values()).sort((a, b) => a.name.localeCompare(b.name));
     const primaryDesigner = normalizedDesigners[0] ?? null;
+    const strategist = strategistMap.get(taskId) ?? null;
+    const designerIds = new Set(normalizedDesigners.map((person) => person.id));
+    const strategistIds = new Set(strategist ? [strategist.id] : []);
+    const taskAssignees = (task.user_ids ?? [])
+      .map((userId) => userMap.get(userId))
+      .filter(Boolean)
+      .map((user) => ({ id: user.id, name: user.name }));
+    const clientSuccess =
+      taskAssignees.find((person) => !designerIds.has(person.id) && !strategistIds.has(person.id)) ??
+      taskAssignees[0] ??
+      null;
 
     const isCanceled = typeof task.state === 'string' && task.state.toLowerCase().includes('cancel');
     const normalizedStatus = isCanceled
@@ -748,7 +786,9 @@ function normalizeTasks(
       description: task.description ?? '',
       designer: primaryDesigner,
       designers: normalizedDesigners,
-      strategist: strategistMap.get(taskId) ?? null,
+      strategist,
+      clientSuccess,
+      assignees: taskAssignees,
       status: normalizedStatus,
       invoice: saleOrderRecord
         ? {
@@ -871,6 +911,7 @@ async function main() {
     console.log(`Fetched ${availabilitySlots.length} planning.slot records for availability`);
     const creativeEmployees = await fetchCreativeEmployees();
     console.log(`Fetched ${creativeEmployees.length} active Creative / Creative Strategy employees`);
+    const creativeDesigners = normalizeCreativeEmployees(creativeEmployees);
 
     const projectMap = buildMap(projects);
     const saleOrderMap = buildMap(mergedSaleOrders);
@@ -891,23 +932,66 @@ async function main() {
       isDesignerRole,
       (slot) => slot.x_studio_parent_task?.[0] ?? null,
     );
-    const designerAvailabilityAll = buildCreativeAvailability(
+    const now = Date.now();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const pastWindowStart = now - sevenDaysMs;
+    const pastWindowEnd = now;
+    const nextWindowStart = now;
+    const nextWindowEnd = now + sevenDaysMs;
+
+    const designerAvailabilityAllPast7Days = buildCreativeAvailability(
       availabilitySlots,
       projectMap,
       allowedProjectIds,
       'all',
+      pastWindowStart,
+      pastWindowEnd,
+      creativeDesigners,
     );
-    const designerAvailabilityUAE = buildCreativeAvailability(
+    const designerAvailabilityUAEPast7Days = buildCreativeAvailability(
       availabilitySlots,
       projectMap,
       allowedProjectIds,
       'UAE',
+      pastWindowStart,
+      pastWindowEnd,
+      creativeDesigners,
     );
-    const designerAvailabilityKSA = buildCreativeAvailability(
+    const designerAvailabilityKSAPast7Days = buildCreativeAvailability(
       availabilitySlots,
       projectMap,
       allowedProjectIds,
       'KSA',
+      pastWindowStart,
+      pastWindowEnd,
+      creativeDesigners,
+    );
+    const designerAvailabilityAllNext7Days = buildCreativeAvailability(
+      availabilitySlots,
+      projectMap,
+      allowedProjectIds,
+      'all',
+      nextWindowStart,
+      nextWindowEnd,
+      creativeDesigners,
+    );
+    const designerAvailabilityUAENext7Days = buildCreativeAvailability(
+      availabilitySlots,
+      projectMap,
+      allowedProjectIds,
+      'UAE',
+      nextWindowStart,
+      nextWindowEnd,
+      creativeDesigners,
+    );
+    const designerAvailabilityKSANext7Days = buildCreativeAvailability(
+      availabilitySlots,
+      projectMap,
+      allowedProjectIds,
+      'KSA',
+      nextWindowStart,
+      nextWindowEnd,
+      creativeDesigners,
     );
 
     const normalized = normalizeTasks(
@@ -938,15 +1022,25 @@ async function main() {
             users: users.length,
             planningSlots: planningSlots.length,
             planningSlotsAvailability: availabilitySlots.length,
-            designerCards: designerAvailabilityAll.length,
+            designerCards: designerAvailabilityAllPast7Days.length,
             creativeEmployees: creativeEmployees.length,
           },
           rows: normalized,
-          designerAvailability: designerAvailabilityAll,
+          creativeEmployees: creativeDesigners,
+          designerAvailability: designerAvailabilityAllPast7Days,
           designerAvailabilityByMarket: {
-            all: designerAvailabilityAll,
-            uae: designerAvailabilityUAE,
-            ksa: designerAvailabilityKSA,
+            all: {
+              past7Days: designerAvailabilityAllPast7Days,
+              next7Days: designerAvailabilityAllNext7Days,
+            },
+            uae: {
+              past7Days: designerAvailabilityUAEPast7Days,
+              next7Days: designerAvailabilityUAENext7Days,
+            },
+            ksa: {
+              past7Days: designerAvailabilityKSAPast7Days,
+              next7Days: designerAvailabilityKSANext7Days,
+            },
           },
         },
         null,

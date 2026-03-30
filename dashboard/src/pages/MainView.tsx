@@ -5,6 +5,8 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 type SortKey = 'startDate' | 'endDate' | 'status' | 'submissionDate';
 type SortDirection = 'asc' | 'desc';
 type AtRiskValue = 'Yes' | 'No';
+type PriorityValue = 'High' | 'Med' | 'Low' | '—';
+type InvoicePercentOverrideValue = number | null;
 type MarketFilter = 'all' | 'UAE' | 'KSA';
 type ColumnFilterState = Record<string, string>;
 type DateRangeFilterState = {
@@ -22,6 +24,8 @@ const formatCurrencyAed = (value: number) =>
   }).format(value);
 
 const atRiskStorageKey = 'main-view-at-risk-state-v1';
+const priorityStorageKey = 'main-view-priority-state-v1';
+const invoicePercentStorageKey = 'main-view-invoice-percent-state-v1';
 
 const statusTone = (value?: string | null) => {
   if (!value) return 'border-[#e1e6ef] bg-[#f7f8fb] text-[#626f82]';
@@ -92,10 +96,14 @@ const columns: Array<{
   { key: 'account', label: 'Account Name', helper: 'Client / Account', width: '240px' },
   { key: 'project', label: 'Project Name', width: '280px' },
   { key: 'description', label: 'Description', width: '240px' },
+  { key: 'clientSuccess', label: 'Client Success', width: '170px' },
   { key: 'designer', label: 'Designer', width: '140px' },
   { key: 'strategist', label: 'Strategist', width: '150px' },
+  { key: 'assignmentType', label: 'Assignment Type', width: '160px' },
+  { key: 'priority', label: 'Priority', width: '120px' },
   { key: 'status', label: 'Status', sortKey: 'status' as SortKey, width: '150px' },
   { key: 'invoice', label: 'Invoice', width: '110px' },
+  { key: 'invoicingPercent', label: 'Invoicing %', width: '170px' },
   { key: 'payment', label: 'Payment', width: '130px' },
   { key: 'revenue', label: 'Revenue', width: '130px' },
   { key: 'amountToInvoice', label: 'Amount to Invoice', width: '170px' },
@@ -140,6 +148,10 @@ function Pill({
 
 const toInitialAtRiskState = (rows: ProjectRow[]) =>
   Object.fromEntries(rows.map((row) => [row.taskId, 'No'])) as Record<number, AtRiskValue>;
+const toInitialPriorityState = (rows: ProjectRow[]) =>
+  Object.fromEntries(rows.map((row) => [row.taskId, '—'])) as Record<number, PriorityValue>;
+const toInitialInvoicePercentState = (rows: ProjectRow[]) =>
+  Object.fromEntries(rows.map((row) => [row.taskId, null])) as Record<number, InvoicePercentOverrideValue>;
 const initialColumnFilters = Object.fromEntries(columns.map((column) => [column.key, ''])) as ColumnFilterState;
 const initialDateRangeFilters: DateRangeFilterState = {
   startDateFrom: '',
@@ -177,7 +189,42 @@ const isCanceledStatus = (statusName: string | null | undefined) => {
   return value.includes('cancel');
 };
 
-const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) => {
+const getAssignmentType = (row: ProjectRow) => {
+  const hasDesigner = ((row.designers ?? []).length > 0) || Boolean(row.designer);
+  const hasStrategist = Boolean(row.strategist);
+  if (hasDesigner && hasStrategist) return 'Design + Strategy';
+  if (hasDesigner) return 'Design only';
+  if (hasStrategist) return 'Strategy only';
+  return 'Unassigned';
+};
+
+const getAutoInvoicePercent = (row: ProjectRow) => {
+  const quantityTotal = Number(row.invoice?.quantityTotal ?? 0);
+  const quantityInvoiced = Number(row.invoice?.quantityInvoiced ?? 0);
+  if (!Number.isFinite(quantityTotal) || quantityTotal <= 0 || !Number.isFinite(quantityInvoiced)) return null;
+  return Math.max(0, Math.min(100, Math.round((quantityInvoiced / quantityTotal) * 100)));
+};
+
+const getEffectiveInvoicePercent = (row: ProjectRow, overrideValue: InvoicePercentOverrideValue) => {
+  if (typeof overrideValue === 'number') {
+    return Math.max(0, Math.min(100, Math.round(overrideValue)));
+  }
+  return getAutoInvoicePercent(row);
+};
+
+const getInvoicePercentLabel = (row: ProjectRow, overrideValue: InvoicePercentOverrideValue) => {
+  const value = getEffectiveInvoicePercent(row, overrideValue);
+  if (value === null) return '—';
+  return typeof overrideValue === 'number' ? `${value}% (manual)` : `${value}% (auto)`;
+};
+
+const getColumnValue = (
+  row: ProjectRow,
+  key: string,
+  rowAtRisk: AtRiskValue,
+  rowPriority: PriorityValue,
+  rowInvoicePercentOverride: InvoicePercentOverrideValue,
+) => {
   if (key === 'account') {
     return `${row.accountName ?? ''}${row.clientAccount ? ` / ${row.clientAccount}` : ''}`.trim() || '—';
   }
@@ -187,6 +234,9 @@ const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) =>
   if (key === 'description') {
     return row.description ? toPlainText(row.description) : '—';
   }
+  if (key === 'clientSuccess') {
+    return row.clientSuccess?.name ?? '—';
+  }
   if (key === 'designer') {
     const names = (row.designers ?? []).map((person) => person.name);
     if (names.length > 0) return names.join(', ');
@@ -195,6 +245,12 @@ const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) =>
   if (key === 'strategist') {
     return row.strategist?.name ?? '—';
   }
+  if (key === 'assignmentType') {
+    return getAssignmentType(row);
+  }
+  if (key === 'priority') {
+    return rowPriority;
+  }
   if (key === 'status') {
     return row.status?.name ?? '—';
   }
@@ -202,6 +258,9 @@ const getColumnValue = (row: ProjectRow, key: string, rowAtRisk: AtRiskValue) =>
     if (!row.invoice) return 'Not invoiced';
     const tone = invoiceToneMap[row.invoice.status] ?? invoiceToneMap.not_invoiced;
     return tone.label;
+  }
+  if (key === 'invoicingPercent') {
+    return getInvoicePercentLabel(row, rowInvoicePercentOverride);
   }
   if (key === 'startDate') {
     return formatDate(row.startDate);
@@ -262,6 +321,46 @@ export function MainView({
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<number, boolean>>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFilterState>(initialColumnFilters);
   const [dateRangeFilters, setDateRangeFilters] = useState<DateRangeFilterState>(initialDateRangeFilters);
+  const [priorityState, setPriorityState] = useState<Record<number, PriorityValue>>(() => {
+    const initialPriorityState = toInitialPriorityState(baseRows);
+    if (typeof window === 'undefined') return initialPriorityState;
+    try {
+      const saved = window.localStorage.getItem(priorityStorageKey);
+      if (!saved) return initialPriorityState;
+      const parsed = JSON.parse(saved) as Record<string, PriorityValue>;
+      const merged = { ...initialPriorityState };
+      for (const row of baseRows) {
+        const savedValue = parsed[String(row.taskId)];
+        if (savedValue === 'High' || savedValue === 'Med' || savedValue === 'Low' || savedValue === '—') {
+          merged[row.taskId] = savedValue;
+        }
+      }
+      return merged;
+    } catch {
+      return initialPriorityState;
+    }
+  });
+  const [invoicePercentOverrideState, setInvoicePercentOverrideState] = useState<
+    Record<number, InvoicePercentOverrideValue>
+  >(() => {
+    const initialInvoicePercentState = toInitialInvoicePercentState(baseRows);
+    if (typeof window === 'undefined') return initialInvoicePercentState;
+    try {
+      const saved = window.localStorage.getItem(invoicePercentStorageKey);
+      if (!saved) return initialInvoicePercentState;
+      const parsed = JSON.parse(saved) as Record<string, number | null>;
+      const merged = { ...initialInvoicePercentState };
+      for (const row of baseRows) {
+        const savedValue = parsed[String(row.taskId)];
+        if (savedValue === null || (typeof savedValue === 'number' && Number.isFinite(savedValue))) {
+          merged[row.taskId] = savedValue;
+        }
+      }
+      return merged;
+    } catch {
+      return initialInvoicePercentState;
+    }
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -269,8 +368,32 @@ export function MainView({
   }, [atRiskState]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(priorityStorageKey, JSON.stringify(priorityState));
+  }, [priorityState]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(invoicePercentStorageKey, JSON.stringify(invoicePercentOverrideState));
+  }, [invoicePercentOverrideState]);
+
+  useEffect(() => {
     setAtRiskState((prev) => {
       const next = { ...toInitialAtRiskState(baseRows), ...prev };
+      return next;
+    });
+  }, [baseRows]);
+
+  useEffect(() => {
+    setPriorityState((prev) => {
+      const next = { ...toInitialPriorityState(baseRows), ...prev };
+      return next;
+    });
+  }, [baseRows]);
+
+  useEffect(() => {
+    setInvoicePercentOverrideState((prev) => {
+      const next = { ...toInitialInvoicePercentState(baseRows), ...prev };
       return next;
     });
   }, [baseRows]);
@@ -287,18 +410,22 @@ export function MainView({
         new Set(
           marketRows.map((row) => {
             const rowAtRisk = atRiskState[row.taskId] ?? 'No';
-            return getColumnValue(row, column.key, rowAtRisk);
+            const rowPriority = priorityState[row.taskId] ?? '—';
+            const rowInvoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
+            return getColumnValue(row, column.key, rowAtRisk, rowPriority, rowInvoicePercentOverride);
           }),
         ),
       ).sort((a, b) => a.localeCompare(b));
       options[column.key] = values;
     });
     return options;
-  }, [atRiskState, marketRows]);
+  }, [atRiskState, marketRows, priorityState, invoicePercentOverrideState]);
 
   const filteredRows = useMemo(() => {
     return marketRows.filter((row) => {
       const rowAtRisk = atRiskState[row.taskId] ?? 'No';
+      const rowPriority = priorityState[row.taskId] ?? '—';
+      const rowInvoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
       const startTime = toTimestamp(row.startDate);
       const endTime = toTimestamp(row.endDate);
       const startFrom = toDayStart(dateRangeFilters.startDateFrom);
@@ -316,12 +443,14 @@ export function MainView({
         if (column.key === 'startDate' || column.key === 'endDate') return true;
         const query = (columnFilters[column.key] ?? '').trim().toLowerCase();
         if (!query) return true;
-        return getColumnValue(row, column.key, rowAtRisk).toLowerCase().includes(query);
+        return getColumnValue(row, column.key, rowAtRisk, rowPriority, rowInvoicePercentOverride)
+          .toLowerCase()
+          .includes(query);
       });
 
       return matchesDateRanges && matchesColumnFilters;
     });
-  }, [atRiskState, columnFilters, dateRangeFilters, marketRows]);
+  }, [atRiskState, columnFilters, dateRangeFilters, marketRows, priorityState, invoicePercentOverrideState]);
 
   const sortedRows = useMemo(() => {
     const multiplier = sortState.direction === 'asc' ? 1 : -1;
@@ -361,6 +490,14 @@ export function MainView({
     });
   };
 
+  const setPriority = (taskId: number, priority: PriorityValue) => {
+    setPriorityState((prev) => ({ ...prev, [taskId]: priority }));
+  };
+
+  const setInvoicePercentOverride = (taskId: number, value: InvoicePercentOverrideValue) => {
+    setInvoicePercentOverrideState((prev) => ({ ...prev, [taskId]: value }));
+  };
+
   const toggleDescription = (taskId: number) => {
     setExpandedDescriptions((prev) => ({
       ...prev,
@@ -397,7 +534,7 @@ export function MainView({
     >
       <section className="space-y-1" style={{ ['--filters-offset' as string]: '64px' }}>
         <div className="overflow-x-auto overflow-y-auto rounded-[20px] border border-divider bg-white shadow-sm max-h-[calc(100vh-190px)]">
-            <table className="min-w-[2270px] table-fixed border-collapse">
+            <table className="min-w-[2810px] table-fixed border-collapse">
               <thead className="sticky top-0 z-40 bg-[#f9fafc] text-left text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-400 shadow-[0_1px_0_0_#eceff3]">
                 <tr>
                   {columns.map((column) => (
@@ -501,6 +638,10 @@ export function MainView({
               <tbody className="divide-y divide-divider text-sm text-slate-700">
                 {sortedRows.map((row) => {
                   const riskValue = atRiskState[row.taskId] ?? 'No';
+                  const priorityValue = priorityState[row.taskId] ?? '—';
+                  const invoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
+                  const autoInvoicePercent = getAutoInvoicePercent(row);
+                  const effectiveInvoicePercent = getEffectiveInvoicePercent(row, invoicePercentOverride);
                   const riskRoleTone =
                     riskValue === 'Yes'
                       ? 'border-rose-200 bg-rose-50 text-rose-700'
@@ -534,6 +675,13 @@ export function MainView({
                           </span>
                         </button>
                       </td>
+                      <td className="px-5 py-3" style={columnStyles.clientSuccess}>
+                        {row.clientSuccess ? (
+                          <Pill tone="border-sky-200 bg-sky-50 text-sky-700">{row.clientSuccess.name}</Pill>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3" style={columnStyles.designer}>
                         {(row.designers ?? []).length > 0 ? (
                           <div className="flex flex-wrap gap-1.5">
@@ -556,6 +704,21 @@ export function MainView({
                           <span className="text-xs text-slate-400">—</span>
                         )}
                       </td>
+                      <td className="px-5 py-3 text-slate-600" style={columnStyles.assignmentType}>
+                        <Pill tone="border-slate-200 bg-slate-50 text-slate-700">{getAssignmentType(row)}</Pill>
+                      </td>
+                      <td className="px-5 py-3" style={columnStyles.priority}>
+                        <select
+                          value={priorityValue}
+                          onChange={(event) => setPriority(row.taskId, event.target.value as PriorityValue)}
+                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 focus:border-slate-300 focus:outline-none"
+                        >
+                          <option value="—">—</option>
+                          <option value="High">High</option>
+                          <option value="Med">Med</option>
+                          <option value="Low">Low</option>
+                        </select>
+                      </td>
                       <td className="px-5 py-3" style={columnStyles.status}>
                         {row.status ? (
                           <Pill tone={statusTone(row.status.name)}>{row.status.name}</Pill>
@@ -571,6 +734,42 @@ export function MainView({
                           const tone = invoiceToneMap[row.invoice.status] ?? invoiceToneMap.not_invoiced;
                           return <Pill tone={tone.tone}>{tone.label}</Pill>;
                         })()}
+                      </td>
+                      <td className="px-5 py-3" style={columnStyles.invoicingPercent}>
+                        <div className="space-y-1">
+                          <div className="text-xs font-semibold text-slate-700">
+                            {effectiveInvoicePercent === null ? '—' : `${effectiveInvoicePercent}%`}
+                            {invoicePercentOverride !== null ? ' (manual)' : ' (auto)'}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              step={1}
+                              value={invoicePercentOverride ?? ''}
+                              placeholder={autoInvoicePercent === null ? '—' : `${autoInvoicePercent}`}
+                              onChange={(event) => {
+                                const nextValue = event.target.value.trim();
+                                if (nextValue === '') {
+                                  setInvoicePercentOverride(row.taskId, null);
+                                  return;
+                                }
+                                const parsed = Number(nextValue);
+                                if (!Number.isFinite(parsed)) return;
+                                setInvoicePercentOverride(row.taskId, Math.max(0, Math.min(100, parsed)));
+                              }}
+                              className="w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 focus:border-slate-300 focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setInvoicePercentOverride(row.taskId, null)}
+                              className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                            >
+                              Auto
+                            </button>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-3" style={columnStyles.payment}>
                         {(() => {
