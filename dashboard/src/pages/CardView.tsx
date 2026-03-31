@@ -73,6 +73,7 @@ function statusTone(statusName: string | null | undefined) {
 
 function invoiceTone(label: string) {
   const value = label.toLowerCase();
+  if (value.includes('no sales order')) return 'bg-rose-50 text-rose-700 border border-rose-200';
   if (value === 'invoiced') return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
   if (value.includes('50%')) return 'bg-amber-50 text-amber-700 border border-amber-200';
   return 'bg-slate-50 text-slate-700 border border-slate-200';
@@ -400,7 +401,7 @@ export function CardView({
           {cards.map(({ row, daysRemaining, atRisk, cardColor, completed }) => {
             const statusLabel = row.status?.name ?? 'Not Started';
             const tone = statusTone(statusLabel);
-            const invoiceLabel = row.invoice?.statusLabel ?? 'Not invoiced';
+            const invoiceLabel = row.invoice?.statusLabel ?? 'No sales order';
             const paymentLabel = row.payment?.statusLabel ?? 'No Invoice';
             const paymentStatus = row.payment?.status ?? 'no_invoice';
             const revenueLabel = formatCurrencyAed(Number(row.revenueAed ?? 0));

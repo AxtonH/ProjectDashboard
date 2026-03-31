@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { AppShell } from '../components/layout/AppShell';
 import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
@@ -54,6 +54,37 @@ function classifyRow(statusName: string | null | undefined, atRisk: boolean): Bo
   if (value.includes('complete') || value.includes('done')) return 'completed';
   if (value.includes('progress') || value.includes('review') || value.includes('feedback')) return 'progress';
   return 'open';
+}
+
+type FilterOption = { label: string; value: string };
+
+function FilterChip({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: FilterOption[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="inline-flex items-center gap-2 rounded-full border border-[#e2e6ef] bg-white px-4 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
+      <span className="uppercase tracking-[0.25em] text-[0.6rem] text-slate-400">{label}</span>
+      <select
+        className="bg-transparent text-slate-700 focus:outline-none"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }
 
 function formatDate(value: string | null) {
@@ -129,9 +160,56 @@ export function BoardView({
   marketFilter?: MarketFilter;
 }) {
   const baseRows: ProjectRow[] = snapshot.rows ?? [];
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [invoiceFilter, setInvoiceFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
   const marketRows = useMemo(
     () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
     [baseRows, marketFilter],
+  );
+
+  const statusOptions = useMemo<FilterOption[]>(
+    () => [
+      { label: 'All', value: 'all' },
+      ...Array.from(
+        new Set(
+          marketRows
+            .map((row) => row.status?.name ?? '—')
+            .filter(Boolean),
+        ),
+      )
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({ label: value, value })),
+    ],
+    [marketRows],
+  );
+
+  const invoiceOptions = useMemo<FilterOption[]>(
+    () => [
+      { label: 'All', value: 'all' },
+      ...Array.from(
+        new Set(
+          marketRows.map((row) => row.invoice?.statusLabel ?? 'No sales order'),
+        ),
+      )
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({ label: value, value })),
+    ],
+    [marketRows],
+  );
+
+  const paymentOptions = useMemo<FilterOption[]>(
+    () => [
+      { label: 'All', value: 'all' },
+      ...Array.from(
+        new Set(
+          marketRows.map((row) => row.payment?.statusLabel ?? 'No Invoice'),
+        ),
+      )
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({ label: value, value })),
+    ],
+    [marketRows],
   );
 
   const persistedAtRiskState = useMemo<Record<number, AtRiskValue>>(() => {
@@ -166,6 +244,18 @@ export function BoardView({
         continue;
       }
       if (!shouldIncludeCompletedRow(row, now)) {
+        continue;
+      }
+      const rowStatus = row.status?.name ?? '—';
+      const rowInvoice = row.invoice?.statusLabel ?? 'No sales order';
+      const rowPayment = row.payment?.statusLabel ?? 'No Invoice';
+      if (statusFilter !== 'all' && rowStatus !== statusFilter) {
+        continue;
+      }
+      if (invoiceFilter !== 'all' && rowInvoice !== invoiceFilter) {
+        continue;
+      }
+      if (paymentFilter !== 'all' && rowPayment !== paymentFilter) {
         continue;
       }
       const atRisk = (persistedAtRiskState[row.taskId] ?? 'No') === 'Yes';
@@ -234,7 +324,7 @@ export function BoardView({
         amountToInvoiceByColumn.atRisk
       ),
     };
-  }, [marketRows, persistedAtRiskState]);
+  }, [marketRows, persistedAtRiskState, statusFilter, invoiceFilter, paymentFilter]);
 
   const displayedTaskCount = useMemo(
     () => Object.values(grouped.buckets).reduce((total, rows) => total + rows.length, 0),
@@ -259,6 +349,9 @@ export function BoardView({
       description="Four-column board: Open/New, In Progress, Completed, and At Risk."
       actions={
         <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
+          <FilterChip label="Status" value={statusFilter} options={statusOptions} onChange={setStatusFilter} />
+          <FilterChip label="Invoice" value={invoiceFilter} options={invoiceOptions} onChange={setInvoiceFilter} />
+          <FilterChip label="Payment" value={paymentFilter} options={paymentOptions} onChange={setPaymentFilter} />
           {viewSwitcher}
           <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
             Last sync: {formattedLastSync}
@@ -301,7 +394,12 @@ export function BoardView({
                   <p className="truncate text-sm font-semibold text-slate-900">{row.taskName}</p>
                   <p className="truncate text-xs text-slate-500">{row.accountName ?? 'TBD'}</p>
                   <p className="mt-1 text-xs text-slate-600">
-                    Sales order: {row.invoice?.label ?? '—'}
+                    Sales order:{' '}
+                    {row.invoice?.label ? (
+                      row.invoice.label
+                    ) : (
+                      <span className="font-semibold text-rose-700">No sales order</span>
+                    )}
                   </p>
                   <p className="mt-2 text-xs text-slate-600">
                     {formatDate(row.startDate)} → {formatDate(row.endDate)}

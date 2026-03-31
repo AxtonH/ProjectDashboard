@@ -277,7 +277,7 @@ const getColumnValue = (
     return row.status?.name ?? '—';
   }
   if (key === 'invoice') {
-    if (!row.invoice) return 'Not invoiced';
+    if (!row.invoice) return 'No sales order';
     const tone = invoiceToneMap[row.invoice.status] ?? invoiceToneMap.not_invoiced;
     return tone.label;
   }
@@ -871,7 +871,7 @@ export function MainView({
                       <td className="px-5 py-3" style={columnStyles.invoice}>
                         {(() => {
                           if (!row.invoice) {
-                            return <Pill tone="border-slate-200 bg-slate-50 text-slate-600">Not invoiced</Pill>;
+                            return <Pill tone="border-rose-200 bg-rose-50 text-rose-700">No sales order</Pill>;
                           }
                           const tone = invoiceToneMap[row.invoice.status] ?? invoiceToneMap.not_invoiced;
                           return <Pill tone={tone.tone}>{tone.label}</Pill>;

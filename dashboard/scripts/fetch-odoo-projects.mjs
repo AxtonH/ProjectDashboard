@@ -308,31 +308,6 @@ function collectSaleOrderIds(projects, saleOrderIdsSet) {
   return [...saleOrderIdsSet];
 }
 
-function buildProjectSaleOrderMap(projects, linkedSaleOrders) {
-  const map = new Map();
-
-  for (const project of projects) {
-    const directSaleOrderId = project.sale_order_id?.[0];
-    if (directSaleOrderId) {
-      map.set(project.id, directSaleOrderId);
-    }
-  }
-
-  for (const order of linkedSaleOrders) {
-    const primaryProjectId = order.project_id?.[0];
-    if (primaryProjectId && !map.has(primaryProjectId)) {
-      map.set(primaryProjectId, order.id);
-    }
-    for (const relatedProjectId of order.project_ids ?? []) {
-      if (relatedProjectId && !map.has(relatedProjectId)) {
-        map.set(relatedProjectId, order.id);
-      }
-    }
-  }
-
-  return map;
-}
-
 function classifyInvoiceStatus(quantityTotal, quantityInvoiced) {
   const eps = 0.000001;
   if (Math.abs(quantityInvoiced) <= eps) {
@@ -724,7 +699,6 @@ function normalizeTasks(
   saleOrderRevenueMap,
   saleOrderAmountToInvoiceMap,
   saleOrderPaymentMap,
-  projectSaleOrderMap,
   saleOrderLineToOrderMap,
   userMap,
   strategistMap,
@@ -736,7 +710,7 @@ function normalizeTasks(
     const projectRecord = projectMap.get(projectId);
     const taskSaleLineId = task.sale_line_id?.[0];
     const saleOrderIdFromTask = taskSaleLineId ? saleOrderLineToOrderMap.get(taskSaleLineId) : undefined;
-    const saleOrderId = saleOrderIdFromTask ?? (projectId ? projectSaleOrderMap.get(projectId) : undefined);
+    const saleOrderId = saleOrderIdFromTask;
     const saleOrderRecord = saleOrderId ? saleOrderMap.get(saleOrderId) : undefined;
     const invoiceSummary = saleOrderId ? saleOrderInvoiceMap.get(saleOrderId) : undefined;
     const revenueAed = saleOrderId ? Number(saleOrderRevenueMap.get(saleOrderId) ?? 0) : 0;
@@ -919,7 +893,6 @@ async function main() {
     const saleOrderRevenueMap = buildSaleOrderRevenueMap(mergedSaleOrders);
     const saleOrderAmountToInvoiceMap = buildSaleOrderAmountToInvoiceMap(mergedSaleOrders);
     const saleOrderPaymentMap = buildSaleOrderPaymentMap(mergedSaleOrders, accountMoves);
-    const projectSaleOrderMap = buildProjectSaleOrderMap(projects, mergedSaleOrders);
     const saleOrderLineToOrderMap = buildSaleOrderLineToOrderMap(saleOrderLines);
     const userMap = buildMap(users);
     const strategistMap = buildRoleMap(
@@ -1002,7 +975,6 @@ async function main() {
       saleOrderRevenueMap,
       saleOrderAmountToInvoiceMap,
       saleOrderPaymentMap,
-      projectSaleOrderMap,
       saleOrderLineToOrderMap,
       userMap,
       strategistMap,
