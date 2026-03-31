@@ -286,26 +286,16 @@ export function BoardView({
       atRisk: 0,
     };
     const seenSalesOrdersGlobal = new Set<SalesOrderKey>();
-
-    const getSalesOrderKey = (row: ProjectRow): SalesOrderKey | null => {
-      if (row.invoice?.id) return String(row.invoice.id);
-      if (row.invoice?.label) return `label:${row.invoice.label}`;
-      return null;
-    };
-
     for (const key of Object.keys(buckets) as BoardColumnKey[]) {
       const seenSalesOrders = new Set<SalesOrderKey>();
       let columnAmount = 0;
-
       for (const row of buckets[key]) {
-        const soKey = getSalesOrderKey(row);
-        if (!soKey || seenSalesOrders.has(soKey)) {
-          continue;
-        }
-
-        seenSalesOrders.add(soKey);
-        seenSalesOrdersGlobal.add(soKey);
         columnAmount += Number(row.amountToInvoiceAed ?? 0);
+        const soKey = row.invoice?.id ? String(row.invoice.id) : row.invoice?.label ? `label:${row.invoice.label}` : null;
+        if (soKey) {
+          seenSalesOrders.add(soKey);
+          seenSalesOrdersGlobal.add(soKey);
+        }
       }
 
       amountToInvoiceByColumn[key] = columnAmount;
@@ -376,7 +366,7 @@ export function BoardView({
                 <h2 className="text-sm font-semibold">{column.label}</h2>
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-white/70 px-2 py-0.5 text-[0.7rem] font-semibold">
-                    To invoice (unique SOs): {formatCurrencyAed(grouped.amountToInvoiceByColumn[column.key])}
+                    To invoice (tasks): {formatCurrencyAed(grouped.amountToInvoiceByColumn[column.key])}
                   </span>
                   <span className="rounded-full bg-white/70 px-2 py-0.5 text-[0.7rem] font-semibold">
                     Unique SOs: {grouped.uniqueSalesOrdersByColumn[column.key]}
@@ -403,6 +393,9 @@ export function BoardView({
                   </p>
                   <p className="mt-2 text-xs text-slate-600">
                     {formatDate(row.startDate)} → {formatDate(row.endDate)}
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-slate-700">
+                    Amount to invoice: {formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0))}
                   </p>
                 </article>
               ))}
