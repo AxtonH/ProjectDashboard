@@ -25,7 +25,6 @@ const formatCurrencyAed = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
-const atRiskStorageKey = 'main-view-at-risk-state-v1';
 const priorityStorageKey = 'main-view-priority-state-v1';
 const invoicePercentStorageKey = 'main-view-invoice-percent-state-v1';
 const completionRateStorageKey = 'main-view-completion-rate-state-v1';
@@ -150,8 +149,6 @@ function Pill({
   );
 }
 
-const toInitialAtRiskState = (rows: ProjectRow[]) =>
-  Object.fromEntries(rows.map((row) => [row.taskId, 'No'])) as Record<number, AtRiskValue>;
 const toInitialPriorityState = (rows: ProjectRow[]) =>
   Object.fromEntries(rows.map((row) => [row.taskId, '—'])) as Record<number, PriorityValue>;
 const toInitialInvoicePercentState = (rows: ProjectRow[]) =>
@@ -182,6 +179,14 @@ const toTimestamp = (value: string | null) => {
   if (!value) return null;
   const time = new Date(value).getTime();
   return Number.isNaN(time) ? null : time;
+};
+
+const getAutoAtRisk = (row: ProjectRow): AtRiskValue => {
+  const dueTime = toTimestamp(row.endDate) ?? toTimestamp(row.clientDueDate ?? null);
+  if (dueTime === null) return 'No';
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return dueTime < todayStart ? 'Yes' : 'No';
 };
 
 const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
@@ -239,7 +244,6 @@ const getCompletionRateLabel = (value: CompletionRateValue) => {
 const getColumnValue = (
   row: ProjectRow,
   key: string,
-  rowAtRisk: AtRiskValue,
   rowPriority: PriorityValue,
   rowInvoicePercentOverride: InvoicePercentOverrideValue,
   rowCompletionRate: CompletionRateValue,
@@ -301,7 +305,7 @@ const getColumnValue = (
     return formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0));
   }
   if (key === 'atRisk') {
-    return rowAtRisk;
+    return getAutoAtRisk(row);
   }
   return '—';
 };
@@ -320,25 +324,6 @@ export function MainView({
   const [sortState, setSortState] = useState<{ key: SortKey; direction: SortDirection }>({
     key: 'submissionDate',
     direction: 'desc',
-  });
-  const [atRiskState, setAtRiskState] = useState<Record<number, AtRiskValue>>(() => {
-    const initialAtRiskState = toInitialAtRiskState(baseRows);
-    if (typeof window === 'undefined') return initialAtRiskState;
-    try {
-      const saved = window.localStorage.getItem(atRiskStorageKey);
-      if (!saved) return initialAtRiskState;
-      const parsed = JSON.parse(saved) as Record<string, AtRiskValue>;
-      const merged = { ...initialAtRiskState };
-      for (const row of baseRows) {
-        const savedValue = parsed[String(row.taskId)];
-        if (savedValue === 'Yes' || savedValue === 'No') {
-          merged[row.taskId] = savedValue;
-        }
-      }
-      return merged;
-    } catch {
-      return initialAtRiskState;
-    }
   });
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<number, boolean>>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFilterState>(initialColumnFilters);
@@ -406,11 +391,6 @@ export function MainView({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem(atRiskStorageKey, JSON.stringify(atRiskState));
-  }, [atRiskState]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
     window.localStorage.setItem(priorityStorageKey, JSON.stringify(priorityState));
   }, [priorityState]);
 
@@ -423,13 +403,6 @@ export function MainView({
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(completionRateStorageKey, JSON.stringify(completionRateState));
   }, [completionRateState]);
-
-  useEffect(() => {
-    setAtRiskState((prev) => {
-      const next = { ...toInitialAtRiskState(baseRows), ...prev };
-      return next;
-    });
-  }, [baseRows]);
 
   useEffect(() => {
     setPriorityState((prev) => {
@@ -466,17 +439,19 @@ export function MainView({
   const columnFilterOptions = useMemo(() => {
     const options: Record<string, string[]> = {};
     columns.forEach((column) => {
+      if (column.key === 'description' || column.key === 'revenue' || column.key === 'amountToInvoice') {
+        options[column.key] = [];
+        return;
+      }
       const values = Array.from(
         new Set(
           confirmationRows.map((row) => {
-            const rowAtRisk = atRiskState[row.taskId] ?? 'No';
             const rowPriority = priorityState[row.taskId] ?? '—';
             const rowInvoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
             const rowCompletionRate = completionRateState[row.taskId] ?? null;
             return getColumnValue(
               row,
               column.key,
-              rowAtRisk,
               rowPriority,
               rowInvoicePercentOverride,
               rowCompletionRate,
@@ -487,11 +462,10 @@ export function MainView({
       options[column.key] = values;
     });
     return options;
-  }, [atRiskState, confirmationRows, priorityState, invoicePercentOverrideState, completionRateState]);
+  }, [confirmationRows, priorityState, invoicePercentOverrideState, completionRateState]);
 
   const filteredRows = useMemo(() => {
     return confirmationRows.filter((row) => {
-      const rowAtRisk = atRiskState[row.taskId] ?? 'No';
       const rowPriority = priorityState[row.taskId] ?? '—';
       const rowInvoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
       const rowCompletionRate = completionRateState[row.taskId] ?? null;
@@ -509,10 +483,16 @@ export function MainView({
       const matchesDateRanges = matchesStartFrom && matchesStartTo && matchesEndFrom && matchesEndTo;
 
       const matchesColumnFilters = columns.every((column) => {
-        if (column.key === 'startDate' || column.key === 'endDate') return true;
+        if (
+          column.key === 'startDate' ||
+          column.key === 'endDate' ||
+          column.key === 'description' ||
+          column.key === 'revenue' ||
+          column.key === 'amountToInvoice'
+        ) return true;
         const query = (columnFilters[column.key] ?? '').trim().toLowerCase();
         if (!query) return true;
-        return getColumnValue(row, column.key, rowAtRisk, rowPriority, rowInvoicePercentOverride, rowCompletionRate)
+        return getColumnValue(row, column.key, rowPriority, rowInvoicePercentOverride, rowCompletionRate)
           .toLowerCase()
           .includes(query);
       });
@@ -520,7 +500,6 @@ export function MainView({
       return matchesDateRanges && matchesColumnFilters;
     });
   }, [
-    atRiskState,
     columnFilters,
     dateRangeFilters,
     confirmationRows,
@@ -557,14 +536,6 @@ export function MainView({
         ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
         : { key, direction: 'asc' },
     );
-  };
-
-  const toggleAtRisk = (taskId: number) => {
-    setAtRiskState((prev) => {
-      const current = prev[taskId] ?? 'No';
-      const next = current === 'Yes' ? 'No' : 'Yes';
-      return { ...prev, [taskId]: next };
-    });
   };
 
   const setPriority = (taskId: number, priority: PriorityValue) => {
@@ -721,6 +692,8 @@ export function MainView({
                             }
                           />
                         </div>
+                      ) : column.key === 'description' || column.key === 'revenue' || column.key === 'amountToInvoice' ? (
+                        <span className="block text-center text-xs text-slate-300">—</span>
                       ) : (
                         <>
                           <input
@@ -745,7 +718,7 @@ export function MainView({
               </thead>
               <tbody className="divide-y divide-divider text-sm text-slate-700">
                 {sortedRows.map((row) => {
-                  const riskValue = atRiskState[row.taskId] ?? 'No';
+                  const riskValue = getAutoAtRisk(row);
                   const priorityValue = priorityState[row.taskId] ?? '—';
                   const invoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
                   const completionRateValue = completionRateState[row.taskId] ?? null;
@@ -939,7 +912,6 @@ export function MainView({
                               ? 'border-rose-200 bg-rose-50 text-rose-600'
                               : 'border-emerald-200 bg-emerald-50 text-emerald-600'
                           }
-                          onClick={() => toggleAtRisk(row.taskId)}
                         >
                           {riskValue}
                         </Pill>
@@ -951,7 +923,7 @@ export function MainView({
             </table>
         </div>
         <div className="border border-t-0 border-divider bg-slate-50 px-4 py-2 text-[0.65rem] uppercase tracking-[0.25em] text-slate-400">
-          {sortedRows.length} rows • Sticky header • Manual At-Risk tracking
+          {sortedRows.length} rows • Sticky header • Auto At-Risk from overdue dates
         </div>
       </section>
     </AppShell>
