@@ -182,6 +182,9 @@ const toTimestamp = (value: string | null) => {
 };
 
 const getAutoAtRisk = (row: ProjectRow): AtRiskValue => {
+  const value = (row.status?.name ?? '').toLowerCase();
+  const isCompleted = value.includes('complete') || value.includes('done');
+  if (isCompleted) return 'No';
   const dueTime = toTimestamp(row.endDate) ?? toTimestamp(row.clientDueDate ?? null);
   if (dueTime === null) return 'No';
   const now = new Date();
@@ -929,3 +932,4 @@ export function MainView({
     </AppShell>
   );
 }
+
