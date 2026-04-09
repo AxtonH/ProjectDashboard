@@ -32,20 +32,6 @@ const formatDate = (value: string | null | undefined) => {
   }).format(date);
 };
 
-const formatDateTime = (value: string | null | undefined) => {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date).replace(',', '');
-};
-
 const toTimestamp = (value: string | null | undefined) => {
   if (!value) return null;
   const time = new Date(value).getTime();
@@ -157,7 +143,7 @@ function ProjectCard({ row }: { row: ProjectRow }) {
         <p className="text-slate-600">Revenue: <span className="font-semibold text-slate-800">{formatCurrencyAed(Number(row.revenueAed ?? 0))}</span></p>
         <p className="text-slate-600">To invoice: <span className="font-semibold text-slate-800">{formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0))}</span></p>
         <p className="text-slate-600">CS: <span className="font-semibold text-slate-800">{row.clientSuccess?.name ?? '—'}</span></p>
-        <p className="text-slate-600">Request: <span className="font-semibold text-slate-800">{formatDateTime(row.startDate)}</span></p>
+        <p className="text-slate-600">Request: <span className="font-semibold text-slate-800">{formatDate(row.startDate)}</span></p>
         <p className="text-slate-600">Internal due: <span className="font-semibold text-slate-800">{formatDate(row.endDate)}</span></p>
         <p className="text-slate-600">Client due: <span className="font-semibold text-slate-800">{formatDate(row.clientDueDate)}</span></p>
       </div>
@@ -195,7 +181,7 @@ function SectionContent({
             <th className="px-3 py-2">Revenue</th>
             <th className="px-3 py-2">To Invoice</th>
             <th className="px-3 py-2">CS</th>
-            <th className="px-3 py-2">Request Date & Time</th>
+            <th className="px-3 py-2">Request Date</th>
             <th className="px-3 py-2">Internal Due</th>
             <th className="px-3 py-2">Client Due</th>
           </tr>
@@ -207,7 +193,7 @@ function SectionContent({
               <td className="px-3 py-2 text-slate-700">{formatCurrencyAed(Number(row.revenueAed ?? 0))}</td>
               <td className="px-3 py-2 text-slate-700">{formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0))}</td>
               <td className="px-3 py-2 text-slate-600">{row.clientSuccess?.name ?? '—'}</td>
-              <td className="px-3 py-2 text-slate-600">{formatDateTime(row.startDate)}</td>
+              <td className="px-3 py-2 text-slate-600">{formatDate(row.startDate)}</td>
               <td className="px-3 py-2 text-slate-600">{formatDate(row.endDate)}</td>
               <td className="px-3 py-2 text-slate-600">{formatDate(row.clientDueDate)}</td>
             </tr>

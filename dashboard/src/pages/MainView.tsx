@@ -76,21 +76,6 @@ const formatDate = (value: string | null) => {
   }).format(date);
 };
 
-const formatDateTime = (value: string | null) => {
-  if (!value) return '—';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(date).replace(',', '');
-};
-
 const getSubmissionSortValue = (row: ProjectRow) => {
   if (row.submissionDate) {
     const time = new Date(row.submissionDate).getTime();
@@ -111,7 +96,7 @@ const columns: Array<{
 }> = [
   {
     key: 'requestReceiptDateTime',
-    label: 'Request Receipt Date & Time',
+    label: 'Request Receipt Date',
     sortKey: 'startDate' as SortKey,
     width: '220px',
   },
@@ -264,7 +249,7 @@ const getColumnValue = (
   rowCompletionRate: CompletionRateValue,
 ) => {
   if (key === 'requestReceiptDateTime') {
-    return formatDateTime(row.startDate);
+    return formatDate(row.startDate);
   }
   if (key === 'project') {
     return `${row.taskName ?? ''}${row.parentProjectName ? ` / ${row.parentProjectName}` : ''}`.trim() || '—';
@@ -716,7 +701,7 @@ export function MainView({
                   return (
                     <tr key={row.taskId} className="hover:bg-slate-50/70">
                       <td className="px-5 py-3" style={columnStyles.requestReceiptDateTime}>
-                        <div className="font-semibold text-slate-900">{formatDateTime(row.startDate)}</div>
+                        <div className="font-semibold text-slate-900">{formatDate(row.startDate)}</div>
                       </td>
                       <td className="px-5 py-3" style={columnStyles.project}>
                         <p className="font-medium text-slate-900">{row.taskName}</p>
