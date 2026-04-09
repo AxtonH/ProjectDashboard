@@ -6,6 +6,7 @@ type AtRiskValue = 'Yes' | 'No';
 type BoardColumnKey = 'open' | 'progress' | 'completed' | 'atRisk';
 type MarketFilter = 'all' | 'UAE' | 'KSA';
 type SalesOrderKey = string;
+type PeriodMode = 'all' | 'last30';
 
 const atRiskStorageKey = 'main-view-at-risk-state-v1';
 
@@ -125,6 +126,17 @@ const parseTime = (value: string | null | undefined) => {
   return Number.isNaN(time) ? null : time;
 };
 
+const inSelectedPeriod = (row: ProjectRow, periodMode: PeriodMode) => {
+  const requestTime = parseTime(row.startDate);
+  if (requestTime === null) return false;
+  if (periodMode === 'all') return true;
+
+  const now = new Date();
+  const end = now.getTime();
+  const start = end - 30 * 24 * 60 * 60 * 1000;
+  return requestTime >= start && requestTime <= end;
+};
+
 const shouldIncludeCompletedRow = (row: ProjectRow, now: number) => {
   if (!isCompletedStatus(row.status?.name)) {
     return true;
@@ -163,9 +175,14 @@ export function BoardView({
   const [statusFilter, setStatusFilter] = useState('all');
   const [invoiceFilter, setInvoiceFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('all');
   const marketRows = useMemo(
     () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
     [baseRows, marketFilter],
+  );
+  const scopedRows = useMemo(
+    () => marketRows.filter((row) => inSelectedPeriod(row, periodMode)),
+    [marketRows, periodMode],
   );
 
   const statusOptions = useMemo<FilterOption[]>(
@@ -181,7 +198,7 @@ export function BoardView({
         .sort((a, b) => a.localeCompare(b))
         .map((value) => ({ label: value, value })),
     ],
-    [marketRows],
+    [scopedRows],
   );
 
   const invoiceOptions = useMemo<FilterOption[]>(
@@ -189,13 +206,13 @@ export function BoardView({
       { label: 'All', value: 'all' },
       ...Array.from(
         new Set(
-          marketRows.map((row) => row.invoice?.statusLabel ?? 'No sales order'),
+          scopedRows.map((row) => row.invoice?.statusLabel ?? 'No sales order'),
         ),
       )
         .sort((a, b) => a.localeCompare(b))
         .map((value) => ({ label: value, value })),
     ],
-    [marketRows],
+    [scopedRows],
   );
 
   const paymentOptions = useMemo<FilterOption[]>(
@@ -203,13 +220,13 @@ export function BoardView({
       { label: 'All', value: 'all' },
       ...Array.from(
         new Set(
-          marketRows.map((row) => row.payment?.statusLabel ?? 'No Invoice'),
+          scopedRows.map((row) => row.payment?.statusLabel ?? 'No Invoice'),
         ),
       )
         .sort((a, b) => a.localeCompare(b))
         .map((value) => ({ label: value, value })),
     ],
-    [marketRows],
+    [scopedRows],
   );
 
   const persistedAtRiskState = useMemo<Record<number, AtRiskValue>>(() => {
@@ -239,7 +256,7 @@ export function BoardView({
       atRisk: [],
     };
 
-    for (const row of marketRows) {
+    for (const row of scopedRows) {
       if (isCanceledStatus(row.status?.name) || isCanceledSalesOrder(row)) {
         continue;
       }
@@ -314,7 +331,7 @@ export function BoardView({
         amountToInvoiceByColumn.atRisk
       ),
     };
-  }, [marketRows, persistedAtRiskState, statusFilter, invoiceFilter, paymentFilter]);
+  }, [scopedRows, persistedAtRiskState, statusFilter, invoiceFilter, paymentFilter]);
 
   const displayedTaskCount = useMemo(
     () => Object.values(grouped.buckets).reduce((total, rows) => total + rows.length, 0),
@@ -342,6 +359,15 @@ export function BoardView({
           <FilterChip label="Status" value={statusFilter} options={statusOptions} onChange={setStatusFilter} />
           <FilterChip label="Invoice" value={invoiceFilter} options={invoiceOptions} onChange={setInvoiceFilter} />
           <FilterChip label="Payment" value={paymentFilter} options={paymentOptions} onChange={setPaymentFilter} />
+          <FilterChip
+            label="Period"
+            value={periodMode}
+            options={[
+              { label: 'No date filter', value: 'all' },
+              { label: 'Past 30 days', value: 'last30' },
+            ]}
+            onChange={(value) => setPeriodMode(value as PeriodMode)}
+          />
           {viewSwitcher}
           <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
             Last sync: {formattedLastSync}

@@ -5,7 +5,7 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 type MarketFilter = 'all' | 'UAE' | 'KSA';
 type SectionKey = 'open' | 'progress' | 'completed' | 'atRisk';
 type SectionDisplay = 'cards' | 'list';
-type PeriodMode = 'month' | 'last30';
+type PeriodMode = 'all' | 'last30';
 
 const sectionTone: Record<SectionKey, string> = {
   open: 'border-sky-200 bg-sky-50 text-sky-900',
@@ -38,16 +38,11 @@ const toTimestamp = (value: string | null | undefined) => {
   return Number.isNaN(time) ? null : time;
 };
 
-const currentMonthValue = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = `${now.getMonth() + 1}`.padStart(2, '0');
-  return `${year}-${month}`;
-};
-
-const inSelectedPeriod = (row: ProjectRow, periodMode: PeriodMode, selectedMonth: string) => {
+const inSelectedPeriod = (row: ProjectRow, periodMode: PeriodMode) => {
   const requestTime = toTimestamp(row.startDate);
   if (requestTime === null) return false;
+
+  if (periodMode === 'all') return true;
 
   if (periodMode === 'last30') {
     const now = new Date();
@@ -55,16 +50,7 @@ const inSelectedPeriod = (row: ProjectRow, periodMode: PeriodMode, selectedMonth
     const start = end - 30 * 24 * 60 * 60 * 1000;
     return requestTime >= start && requestTime <= end;
   }
-
-  if (!/^\d{4}-\d{2}$/.test(selectedMonth)) return true;
-  const [yearText, monthText] = selectedMonth.split('-');
-  const year = Number(yearText);
-  const monthIndex = Number(monthText) - 1;
-  if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || monthIndex < 0 || monthIndex > 11) return true;
-
-  const monthStart = new Date(year, monthIndex, 1).getTime();
-  const nextMonthStart = new Date(year, monthIndex + 1, 1).getTime();
-  return requestTime >= monthStart && requestTime < nextMonthStart;
+  return true;
 };
 
 const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
@@ -216,8 +202,7 @@ export function DashboardView({
   onOpenBoard?: () => void;
 }) {
   const baseRows = snapshot.rows ?? [];
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('month');
-  const [selectedMonth, setSelectedMonth] = useState(currentMonthValue);
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('all');
   const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
     open: false,
     progress: false,
@@ -235,7 +220,7 @@ export function DashboardView({
     const scoped = baseRows
       .filter((row) => matchesMarket(row, marketFilter))
       .filter((row) => !isCanceledStatus(row.status?.name))
-      .filter((row) => inSelectedPeriod(row, periodMode, selectedMonth))
+      .filter((row) => inSelectedPeriod(row, periodMode))
       .sort(sortByMostRecentRequest);
 
     const open: ProjectRow[] = [];
@@ -258,7 +243,7 @@ export function DashboardView({
     const totalAmountToInvoice = scoped.reduce((sum, row) => sum + Number(row.amountToInvoiceAed ?? 0), 0);
 
     return { open, progress, completed, atRisk, totalRevenue, totalAmountToInvoice };
-  }, [baseRows, marketFilter, periodMode, selectedMonth]);
+  }, [baseRows, marketFilter, periodMode]);
 
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())
@@ -291,12 +276,12 @@ export function DashboardView({
           <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-1">
             <button
               type="button"
-              onClick={() => setPeriodMode('month')}
+              onClick={() => setPeriodMode('all')}
               className={`rounded-full px-3 py-1 text-[0.7rem] font-semibold transition ${
-                periodMode === 'month' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+                periodMode === 'all' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Month
+              No date filter
             </button>
             <button
               type="button"
@@ -308,17 +293,6 @@ export function DashboardView({
               Past 30 days
             </button>
           </div>
-          {periodMode === 'month' ? (
-            <label className="flex items-center gap-2 text-xs text-slate-600">
-              <span>Choose month</span>
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(event) => setSelectedMonth(event.target.value)}
-                className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700"
-              />
-            </label>
-          ) : null}
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
