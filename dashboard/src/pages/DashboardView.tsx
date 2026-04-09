@@ -122,16 +122,30 @@ function SectionViewToggle({
 
 function ProjectCard({ row }: { row: ProjectRow }) {
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-md ring-1 ring-slate-100">
       <p className="truncate text-sm font-semibold text-slate-900">{row.taskName}</p>
       <p className="truncate text-xs text-slate-500">{row.accountName ?? '—'}</p>
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-        <p className="text-slate-600">Revenue: <span className="font-semibold text-slate-800">{formatCurrencyAed(Number(row.revenueAed ?? 0))}</span></p>
-        <p className="text-slate-600">To invoice: <span className="font-semibold text-slate-800">{formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0))}</span></p>
-        <p className="text-slate-600">CS: <span className="font-semibold text-slate-800">{row.clientSuccess?.name ?? '—'}</span></p>
-        <p className="text-slate-600">Request: <span className="font-semibold text-slate-800">{formatDate(row.startDate)}</span></p>
-        <p className="text-slate-600">Internal due: <span className="font-semibold text-slate-800">{formatDate(row.endDate)}</span></p>
-        <p className="text-slate-600">Client due: <span className="font-semibold text-slate-800">{formatDate(row.clientDueDate)}</span></p>
+        <p className="text-slate-500">
+          <span className="font-semibold uppercase tracking-[0.08em] text-slate-400">Revenue</span>{' '}
+          <span className="font-semibold text-sky-700">{formatCurrencyAed(Number(row.revenueAed ?? 0))}</span>
+        </p>
+        <p className="text-slate-500">
+          <span className="font-semibold uppercase tracking-[0.08em] text-slate-400">To invoice</span>{' '}
+          <span className="font-semibold text-emerald-700">{formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0))}</span>
+        </p>
+        <p className="text-slate-500">
+          <span className="font-semibold uppercase tracking-[0.08em] text-slate-400">CS</span>{' '}
+          <span className="font-semibold text-slate-800">{row.clientSuccess?.name ?? '—'}</span>
+        </p>
+        <p className="text-slate-500">
+          <span className="font-semibold uppercase tracking-[0.08em] text-slate-400">Request</span>{' '}
+          <span className="font-semibold text-slate-800">{formatDate(row.startDate)}</span>
+        </p>
+        <p className="text-slate-500">
+          <span className="font-semibold uppercase tracking-[0.08em] text-slate-400">Internal due</span>{' '}
+          <span className="font-semibold text-slate-800">{formatDate(row.endDate)}</span>
+        </p>
       </div>
     </article>
   );
@@ -169,7 +183,6 @@ function SectionContent({
             <th className="px-3 py-2">CS</th>
             <th className="px-3 py-2">Request Date</th>
             <th className="px-3 py-2">Internal Due</th>
-            <th className="px-3 py-2">Client Due</th>
           </tr>
         </thead>
         <tbody>
@@ -181,7 +194,6 @@ function SectionContent({
               <td className="px-3 py-2 text-slate-600">{row.clientSuccess?.name ?? '—'}</td>
               <td className="px-3 py-2 text-slate-600">{formatDate(row.startDate)}</td>
               <td className="px-3 py-2 text-slate-600">{formatDate(row.endDate)}</td>
-              <td className="px-3 py-2 text-slate-600">{formatDate(row.clientDueDate)}</td>
             </tr>
           ))}
         </tbody>
