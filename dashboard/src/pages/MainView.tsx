@@ -77,6 +77,21 @@ const formatDate = (value: string | null) => {
   }).format(date);
 };
 
+const formatDateTime = (value: string | null) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(date).replace(',', '');
+};
+
 const getSubmissionSortValue = (row: ProjectRow) => {
   if (row.submissionDate) {
     const time = new Date(row.submissionDate).getTime();
@@ -95,7 +110,12 @@ const columns: Array<{
   sortKey?: SortKey;
   width?: string;
 }> = [
-  { key: 'account', label: 'Account Name', helper: 'Client / Account', width: '240px' },
+  {
+    key: 'requestReceiptDateTime',
+    label: 'Request Receipt Date & Time',
+    sortKey: 'startDate' as SortKey,
+    width: '220px',
+  },
   { key: 'project', label: 'Project Name', width: '280px' },
   { key: 'description', label: 'Description', width: '240px' },
   { key: 'clientSuccess', label: 'Client Success', width: '170px' },
@@ -251,8 +271,8 @@ const getColumnValue = (
   rowInvoicePercentOverride: InvoicePercentOverrideValue,
   rowCompletionRate: CompletionRateValue,
 ) => {
-  if (key === 'account') {
-    return `${row.accountName ?? ''}${row.clientAccount ? ` / ${row.clientAccount}` : ''}`.trim() || '—';
+  if (key === 'requestReceiptDateTime') {
+    return formatDateTime(row.startDate);
   }
   if (key === 'project') {
     return `${row.taskName ?? ''}${row.parentProjectName ? ` / ${row.parentProjectName}` : ''}`.trim() || '—';
@@ -325,7 +345,7 @@ export function MainView({
   const baseRows: ProjectRow[] = snapshot.rows ?? [];
 
   const [sortState, setSortState] = useState<{ key: SortKey; direction: SortDirection }>({
-    key: 'submissionDate',
+    key: 'startDate',
     direction: 'desc',
   });
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<number, boolean>>({});
@@ -526,8 +546,11 @@ export function MainView({
 
       const dateA = sortState.key === 'startDate' ? a.startDate : a.endDate;
       const dateB = sortState.key === 'startDate' ? b.startDate : b.endDate;
-      const timeA = dateA ? new Date(dateA).getTime() : Number.POSITIVE_INFINITY;
-      const timeB = dateB ? new Date(dateB).getTime() : Number.POSITIVE_INFINITY;
+      const timeA = dateA ? new Date(dateA).getTime() : null;
+      const timeB = dateB ? new Date(dateB).getTime() : null;
+      if (timeA === null && timeB === null) return 0;
+      if (timeA === null) return 1;
+      if (timeB === null) return -1;
       return (timeA - timeB) * multiplier;
     });
     return rows;
@@ -731,15 +754,11 @@ export function MainView({
                     riskValue === 'Yes'
                       ? 'border-rose-200 bg-rose-50 text-rose-700'
                       : 'border-emerald-200 bg-emerald-50 text-emerald-700';
-                  const showClient =
-                    row.clientAccount && row.clientAccount !== row.accountName ? row.clientAccount : null;
                   const isDescriptionExpanded = expandedDescriptions[row.taskId] ?? false;
                   return (
                     <tr key={row.taskId} className="hover:bg-slate-50/70">
-                      <td className="px-5 py-3" style={columnStyles.account}>
-                        <div className="font-semibold text-slate-900">{row.accountName ?? '—'}</div>
-                        {row.invoice?.label ? <p className="text-xs font-medium text-slate-700">{row.invoice.label}</p> : null}
-                        {showClient ? <p className="text-xs text-slate-500">{showClient}</p> : null}
+                      <td className="px-5 py-3" style={columnStyles.requestReceiptDateTime}>
+                        <div className="font-semibold text-slate-900">{formatDateTime(row.startDate)}</div>
                       </td>
                       <td className="px-5 py-3" style={columnStyles.project}>
                         <p className="font-medium text-slate-900">{row.taskName}</p>
