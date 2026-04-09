@@ -5,6 +5,7 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 type MarketFilter = 'all' | 'UAE' | 'KSA';
 type SectionKey = 'open' | 'progress' | 'completed' | 'atRisk';
 type SectionDisplay = 'cards' | 'list';
+type PeriodMode = 'month' | 'last30';
 
 const sectionTone: Record<SectionKey, string> = {
   open: 'border-sky-200 bg-sky-50 text-sky-900',
@@ -49,6 +50,35 @@ const toTimestamp = (value: string | null | undefined) => {
   if (!value) return null;
   const time = new Date(value).getTime();
   return Number.isNaN(time) ? null : time;
+};
+
+const currentMonthValue = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, '0');
+  return `${year}-${month}`;
+};
+
+const inSelectedPeriod = (row: ProjectRow, periodMode: PeriodMode, selectedMonth: string) => {
+  const requestTime = toTimestamp(row.startDate);
+  if (requestTime === null) return false;
+
+  if (periodMode === 'last30') {
+    const now = new Date();
+    const end = now.getTime();
+    const start = end - 30 * 24 * 60 * 60 * 1000;
+    return requestTime >= start && requestTime <= end;
+  }
+
+  if (!/^\d{4}-\d{2}$/.test(selectedMonth)) return true;
+  const [yearText, monthText] = selectedMonth.split('-');
+  const year = Number(yearText);
+  const monthIndex = Number(monthText) - 1;
+  if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || monthIndex < 0 || monthIndex > 11) return true;
+
+  const monthStart = new Date(year, monthIndex, 1).getTime();
+  const nextMonthStart = new Date(year, monthIndex + 1, 1).getTime();
+  return requestTime >= monthStart && requestTime < nextMonthStart;
 };
 
 const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
@@ -200,8 +230,14 @@ export function DashboardView({
   onOpenBoard?: () => void;
 }) {
   const baseRows = snapshot.rows ?? [];
-  const [openExpanded, setOpenExpanded] = useState(false);
-  const [atRiskExpanded, setAtRiskExpanded] = useState(false);
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('month');
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthValue);
+  const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
+    open: false,
+    progress: false,
+    completed: false,
+    atRisk: false,
+  });
   const [displayMode, setDisplayMode] = useState<Record<SectionKey, SectionDisplay>>({
     open: 'cards',
     progress: 'cards',
@@ -213,6 +249,7 @@ export function DashboardView({
     const scoped = baseRows
       .filter((row) => matchesMarket(row, marketFilter))
       .filter((row) => !isCanceledStatus(row.status?.name))
+      .filter((row) => inSelectedPeriod(row, periodMode, selectedMonth))
       .sort(sortByMostRecentRequest);
 
     const open: ProjectRow[] = [];
@@ -235,7 +272,7 @@ export function DashboardView({
     const totalAmountToInvoice = scoped.reduce((sum, row) => sum + Number(row.amountToInvoiceAed ?? 0), 0);
 
     return { open, progress, completed, atRisk, totalRevenue, totalAmountToInvoice };
-  }, [baseRows, marketFilter]);
+  }, [baseRows, marketFilter, periodMode, selectedMonth]);
 
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())
@@ -263,32 +300,73 @@ export function DashboardView({
       }
     >
       <section className="space-y-6">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Period</p>
+          <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-1">
+            <button
+              type="button"
+              onClick={() => setPeriodMode('month')}
+              className={`rounded-full px-3 py-1 text-[0.7rem] font-semibold transition ${
+                periodMode === 'month' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              Month
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriodMode('last30')}
+              className={`rounded-full px-3 py-1 text-[0.7rem] font-semibold transition ${
+                periodMode === 'last30' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              Past 30 days
+            </button>
+          </div>
+          {periodMode === 'month' ? (
+            <label className="flex items-center gap-2 text-xs text-slate-600">
+              <span>Choose month</span>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(event) => setSelectedMonth(event.target.value)}
+                className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700"
+              />
+            </label>
+          ) : null}
+        </div>
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
           <article
             className={`rounded-xl border p-4 ${sectionTone.open} cursor-pointer transition hover:shadow-sm`}
-            onClick={() => setOpenExpanded((prev) => !prev)}
+            onClick={() => setExpandedSections((prev) => ({ ...prev, open: !prev.open }))}
           >
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">New / Open</p>
             <p className="mt-2 text-3xl font-semibold">{grouped.open.length}</p>
-            <p className="mt-1 text-sm">{openExpanded ? 'Hide' : 'Expand'}</p>
+            <p className="mt-1 text-sm">{expandedSections.open ? 'Hide' : 'Expand'}</p>
           </article>
-          <article className={`rounded-xl border p-4 ${sectionTone.progress}`}>
+          <article
+            className={`rounded-xl border p-4 ${sectionTone.progress} cursor-pointer transition hover:shadow-sm`}
+            onClick={() => setExpandedSections((prev) => ({ ...prev, progress: !prev.progress }))}
+          >
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">Active (In Progress)</p>
             <p className="mt-2 text-3xl font-semibold">{grouped.progress.length}</p>
-            <p className="mt-1 text-sm">Always visible</p>
+            <p className="mt-1 text-sm">{expandedSections.progress ? 'Hide' : 'Expand'}</p>
           </article>
-          <article className={`rounded-xl border p-4 ${sectionTone.completed}`}>
+          <article
+            className={`rounded-xl border p-4 ${sectionTone.completed} cursor-pointer transition hover:shadow-sm`}
+            onClick={() => setExpandedSections((prev) => ({ ...prev, completed: !prev.completed }))}
+          >
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">Completed</p>
             <p className="mt-2 text-3xl font-semibold">{grouped.completed.length}</p>
-            <p className="mt-1 text-sm">Most recent first</p>
+            <p className="mt-1 text-sm">{expandedSections.completed ? 'Hide' : 'Expand'}</p>
           </article>
           <article
             className={`rounded-xl border p-4 ${sectionTone.atRisk} cursor-pointer transition hover:shadow-sm`}
-            onClick={() => setAtRiskExpanded((prev) => !prev)}
+            onClick={() => setExpandedSections((prev) => ({ ...prev, atRisk: !prev.atRisk }))}
           >
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">At Risk</p>
             <p className="mt-2 text-3xl font-semibold">{grouped.atRisk.length}</p>
-            <p className="mt-1 text-sm">{atRiskExpanded ? 'Hide' : 'Expand'}</p>
+            <p className="mt-1 text-sm">{expandedSections.atRisk ? 'Hide' : 'Expand'}</p>
           </article>
           <article className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
             <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">Total Revenue</p>
@@ -305,18 +383,20 @@ export function DashboardView({
           </button>
         </div>
 
-        <section className="space-y-3">
-          <header className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Active (In Progress)</h2>
-            <SectionViewToggle
-              value={displayMode.progress}
-              onChange={(mode) => setDisplayMode((prev) => ({ ...prev, progress: mode }))}
-            />
-          </header>
-          <SectionContent rows={grouped.progress} displayMode={displayMode.progress} />
-        </section>
+        {expandedSections.progress ? (
+          <section className="space-y-3">
+            <header className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">Active (In Progress)</h2>
+              <SectionViewToggle
+                value={displayMode.progress}
+                onChange={(mode) => setDisplayMode((prev) => ({ ...prev, progress: mode }))}
+              />
+            </header>
+            <SectionContent rows={grouped.progress} displayMode={displayMode.progress} />
+          </section>
+        ) : null}
 
-        {openExpanded ? (
+        {expandedSections.open ? (
           <section className="space-y-3">
             <header className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-slate-900">New / Open</h2>
@@ -329,18 +409,20 @@ export function DashboardView({
           </section>
         ) : null}
 
-        <section className="space-y-3">
-          <header className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Completed</h2>
-            <SectionViewToggle
-              value={displayMode.completed}
-              onChange={(mode) => setDisplayMode((prev) => ({ ...prev, completed: mode }))}
-            />
-          </header>
-          <SectionContent rows={grouped.completed} displayMode={displayMode.completed} />
-        </section>
+        {expandedSections.completed ? (
+          <section className="space-y-3">
+            <header className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">Completed</h2>
+              <SectionViewToggle
+                value={displayMode.completed}
+                onChange={(mode) => setDisplayMode((prev) => ({ ...prev, completed: mode }))}
+              />
+            </header>
+            <SectionContent rows={grouped.completed} displayMode={displayMode.completed} />
+          </section>
+        ) : null}
 
-        {atRiskExpanded ? (
+        {expandedSections.atRisk ? (
           <section className="space-y-3">
             <header className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-slate-900">At Risk</h2>
