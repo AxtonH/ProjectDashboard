@@ -9,7 +9,6 @@ type PriorityValue = 'High' | 'Med' | 'Low' | '—';
 type InvoicePercentOverrideValue = number | null;
 type CompletionRateValue = number | null;
 type MarketFilter = 'all' | 'UAE' | 'KSA';
-type ConfirmationFilter = 'confirmed' | 'notConfirmed';
 type ColumnFilterState = Record<string, string>;
 type DateRangeFilterState = {
   startDateFrom: string;
@@ -223,13 +222,6 @@ const isCanceledStatus = (statusName: string | null | undefined) => {
   return value.includes('cancel');
 };
 
-const isConfirmedRow = (row: ProjectRow) => row.saleOrderState === 'sale';
-
-const isNotConfirmedRow = (row: ProjectRow) => {
-  if (!row.saleOrderState) return true;
-  return row.saleOrderState === 'draft' || row.saleOrderState === 'sent';
-};
-
 const getAssignmentType = (row: ProjectRow) => {
   const hasDesigner = ((row.designers ?? []).length > 0) || Boolean(row.designer);
   const hasStrategist = Boolean(row.strategist);
@@ -351,7 +343,6 @@ export function MainView({
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<number, boolean>>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFilterState>(initialColumnFilters);
   const [dateRangeFilters, setDateRangeFilters] = useState<DateRangeFilterState>(initialDateRangeFilters);
-  const [confirmationFilter, setConfirmationFilter] = useState<ConfirmationFilter>('confirmed');
   const [priorityState, setPriorityState] = useState<Record<number, PriorityValue>>(() => {
     const initialPriorityState = toInitialPriorityState(baseRows);
     if (typeof window === 'undefined') return initialPriorityState;
@@ -452,12 +443,6 @@ export function MainView({
     () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
     [baseRows, marketFilter],
   );
-  const confirmationRows = useMemo(() => {
-    if (confirmationFilter === 'confirmed') {
-      return marketRows.filter((row) => isConfirmedRow(row));
-    }
-    return marketRows.filter((row) => isNotConfirmedRow(row));
-  }, [marketRows, confirmationFilter]);
 
   const columnFilterOptions = useMemo(() => {
     const options: Record<string, string[]> = {};
@@ -468,7 +453,7 @@ export function MainView({
       }
       const values = Array.from(
         new Set(
-          confirmationRows.map((row) => {
+          marketRows.map((row) => {
             const rowPriority = priorityState[row.taskId] ?? '—';
             const rowInvoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
             const rowCompletionRate = completionRateState[row.taskId] ?? null;
@@ -485,10 +470,10 @@ export function MainView({
       options[column.key] = values;
     });
     return options;
-  }, [confirmationRows, priorityState, invoicePercentOverrideState, completionRateState]);
+  }, [marketRows, priorityState, invoicePercentOverrideState, completionRateState]);
 
   const filteredRows = useMemo(() => {
-    return confirmationRows.filter((row) => {
+    return marketRows.filter((row) => {
       const rowPriority = priorityState[row.taskId] ?? '—';
       const rowInvoicePercentOverride = invoicePercentOverrideState[row.taskId] ?? null;
       const rowCompletionRate = completionRateState[row.taskId] ?? null;
@@ -525,7 +510,7 @@ export function MainView({
   }, [
     columnFilters,
     dateRangeFilters,
-    confirmationRows,
+    marketRows,
     priorityState,
     invoicePercentOverrideState,
     completionRateState,
@@ -600,36 +585,9 @@ export function MainView({
       title="Main Project View"
       actions={
         <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
-          <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setConfirmationFilter('confirmed')}
-              className={`rounded-full px-3 py-1.5 text-[0.72rem] font-semibold tracking-[0.01em] transition ${
-                confirmationFilter === 'confirmed'
-                  ? 'bg-slate-900 text-white shadow-[0_1px_2px_rgba(15,23,42,0.25)]'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              Confirmed
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmationFilter('notConfirmed')}
-              className={`rounded-full px-3 py-1.5 text-[0.72rem] font-semibold tracking-[0.01em] transition ${
-                confirmationFilter === 'notConfirmed'
-                  ? 'bg-slate-900 text-white shadow-[0_1px_2px_rgba(15,23,42,0.25)]'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              Not Confirmed
-            </button>
-          </div>
           {viewSwitcher}
           <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
             Last sync: {formattedLastSync}
-          </span>
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-500">
-            {confirmationFilter === 'confirmed' ? 'Confirmed' : 'Not Confirmed'}
           </span>
           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-500">
             {sortedRows.length} tasks

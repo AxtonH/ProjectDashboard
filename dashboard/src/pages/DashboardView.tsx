@@ -1,0 +1,358 @@
+import { useMemo, useState, type ReactNode } from 'react';
+import { AppShell } from '../components/layout/AppShell';
+import type { OdooSnapshot, ProjectRow } from '../types/projects';
+
+type MarketFilter = 'all' | 'UAE' | 'KSA';
+type SectionKey = 'open' | 'progress' | 'completed' | 'atRisk';
+type SectionDisplay = 'cards' | 'list';
+
+const sectionTone: Record<SectionKey, string> = {
+  open: 'border-sky-200 bg-sky-50 text-sky-900',
+  progress: 'border-amber-200 bg-amber-50 text-amber-900',
+  completed: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  atRisk: 'border-rose-200 bg-rose-50 text-rose-900',
+};
+
+const formatCurrencyAed = (value: number) =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'AED',
+    maximumFractionDigits: 0,
+  }).format(value);
+
+const formatDate = (value: string | null | undefined) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
+};
+
+const formatDateTime = (value: string | null | undefined) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date).replace(',', '');
+};
+
+const toTimestamp = (value: string | null | undefined) => {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
+};
+
+const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
+  if (marketFilter === 'all') return true;
+  const market = (row.market ?? '').trim().toUpperCase();
+  return market.includes(marketFilter);
+};
+
+const isCanceledStatus = (statusName: string | null | undefined) => {
+  const value = (statusName ?? '').toLowerCase();
+  return value.includes('cancel');
+};
+
+const isCompletedStatus = (statusName: string | null | undefined) => {
+  const value = (statusName ?? '').toLowerCase();
+  return value.includes('complete') || value.includes('done');
+};
+
+const isProgressStatus = (statusName: string | null | undefined) => {
+  const value = (statusName ?? '').toLowerCase();
+  return value.includes('progress') || value.includes('review') || value.includes('feedback');
+};
+
+const isAtRisk = (row: ProjectRow) => {
+  if (isCompletedStatus(row.status?.name)) return false;
+  const dueTime = toTimestamp(row.endDate) ?? toTimestamp(row.clientDueDate);
+  if (dueTime === null) return false;
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return dueTime < todayStart;
+};
+
+const sortByMostRecentRequest = (a: ProjectRow, b: ProjectRow) => {
+  const aTime = toTimestamp(a.startDate) ?? Number.NEGATIVE_INFINITY;
+  const bTime = toTimestamp(b.startDate) ?? Number.NEGATIVE_INFINITY;
+  return bTime - aTime;
+};
+
+function SectionViewToggle({
+  value,
+  onChange,
+}: {
+  value: SectionDisplay;
+  onChange: (value: SectionDisplay) => void;
+}) {
+  return (
+    <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+      <button
+        type="button"
+        onClick={() => onChange('cards')}
+        className={`rounded-full px-3 py-1 text-[0.68rem] font-semibold transition ${
+          value === 'cards' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+        }`}
+      >
+        Cards
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('list')}
+        className={`rounded-full px-3 py-1 text-[0.68rem] font-semibold transition ${
+          value === 'list' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+        }`}
+      >
+        List
+      </button>
+    </div>
+  );
+}
+
+function ProjectCard({ row }: { row: ProjectRow }) {
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <p className="truncate text-sm font-semibold text-slate-900">{row.taskName}</p>
+      <p className="truncate text-xs text-slate-500">{row.accountName ?? '—'}</p>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+        <p className="text-slate-600">Revenue: <span className="font-semibold text-slate-800">{formatCurrencyAed(Number(row.revenueAed ?? 0))}</span></p>
+        <p className="text-slate-600">To invoice: <span className="font-semibold text-slate-800">{formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0))}</span></p>
+        <p className="text-slate-600">CS: <span className="font-semibold text-slate-800">{row.clientSuccess?.name ?? '—'}</span></p>
+        <p className="text-slate-600">Request: <span className="font-semibold text-slate-800">{formatDateTime(row.startDate)}</span></p>
+        <p className="text-slate-600">Internal due: <span className="font-semibold text-slate-800">{formatDate(row.endDate)}</span></p>
+        <p className="text-slate-600">Client due: <span className="font-semibold text-slate-800">{formatDate(row.clientDueDate)}</span></p>
+      </div>
+    </article>
+  );
+}
+
+function SectionContent({
+  rows,
+  displayMode,
+}: {
+  rows: ProjectRow[];
+  displayMode: SectionDisplay;
+}) {
+  if (!rows.length) {
+    return <p className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500">No projects in this section.</p>;
+  }
+
+  if (displayMode === 'cards') {
+    return (
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+        {rows.map((row) => (
+          <ProjectCard key={row.taskId} row={row} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <table className="min-w-full text-sm">
+        <thead className="bg-slate-50 text-left text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <tr>
+            <th className="px-3 py-2">Project</th>
+            <th className="px-3 py-2">Revenue</th>
+            <th className="px-3 py-2">To Invoice</th>
+            <th className="px-3 py-2">CS</th>
+            <th className="px-3 py-2">Request Date & Time</th>
+            <th className="px-3 py-2">Internal Due</th>
+            <th className="px-3 py-2">Client Due</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={`list-${row.taskId}`} className="border-t border-slate-100">
+              <td className="px-3 py-2 font-medium text-slate-900">{row.taskName}</td>
+              <td className="px-3 py-2 text-slate-700">{formatCurrencyAed(Number(row.revenueAed ?? 0))}</td>
+              <td className="px-3 py-2 text-slate-700">{formatCurrencyAed(Number(row.amountToInvoiceAed ?? 0))}</td>
+              <td className="px-3 py-2 text-slate-600">{row.clientSuccess?.name ?? '—'}</td>
+              <td className="px-3 py-2 text-slate-600">{formatDateTime(row.startDate)}</td>
+              <td className="px-3 py-2 text-slate-600">{formatDate(row.endDate)}</td>
+              <td className="px-3 py-2 text-slate-600">{formatDate(row.clientDueDate)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function DashboardView({
+  snapshot,
+  viewSwitcher,
+  marketFilter = 'all',
+  onOpenBoard,
+}: {
+  snapshot: OdooSnapshot;
+  viewSwitcher?: ReactNode;
+  marketFilter?: MarketFilter;
+  onOpenBoard?: () => void;
+}) {
+  const baseRows = snapshot.rows ?? [];
+  const [openExpanded, setOpenExpanded] = useState(false);
+  const [atRiskExpanded, setAtRiskExpanded] = useState(false);
+  const [displayMode, setDisplayMode] = useState<Record<SectionKey, SectionDisplay>>({
+    open: 'cards',
+    progress: 'cards',
+    completed: 'cards',
+    atRisk: 'cards',
+  });
+
+  const grouped = useMemo(() => {
+    const scoped = baseRows
+      .filter((row) => matchesMarket(row, marketFilter))
+      .filter((row) => !isCanceledStatus(row.status?.name))
+      .sort(sortByMostRecentRequest);
+
+    const open: ProjectRow[] = [];
+    const progress: ProjectRow[] = [];
+    const completed: ProjectRow[] = [];
+    const atRisk: ProjectRow[] = [];
+
+    for (const row of scoped) {
+      if (isAtRisk(row)) atRisk.push(row);
+      if (isCompletedStatus(row.status?.name)) {
+        completed.push(row);
+      } else if (isProgressStatus(row.status?.name)) {
+        progress.push(row);
+      } else {
+        open.push(row);
+      }
+    }
+
+    const totalRevenue = scoped.reduce((sum, row) => sum + Number(row.revenueAed ?? 0), 0);
+    const totalAmountToInvoice = scoped.reduce((sum, row) => sum + Number(row.amountToInvoiceAed ?? 0), 0);
+
+    return { open, progress, completed, atRisk, totalRevenue, totalAmountToInvoice };
+  }, [baseRows, marketFilter]);
+
+  const lastSync = new Date(snapshot.generatedAt);
+  const formattedLastSync = Number.isNaN(lastSync.getTime())
+    ? 'Unknown'
+    : lastSync.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+
+  return (
+    <AppShell
+      wide
+      title="Dashboard"
+      description="Summary and visualization of project pipeline health."
+      actions={
+        <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
+          {viewSwitcher}
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
+            Last sync: {formattedLastSync}
+          </span>
+        </div>
+      }
+    >
+      <section className="space-y-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          <article
+            className={`rounded-xl border p-4 ${sectionTone.open} cursor-pointer transition hover:shadow-sm`}
+            onClick={() => setOpenExpanded((prev) => !prev)}
+          >
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">New / Open</p>
+            <p className="mt-2 text-3xl font-semibold">{grouped.open.length}</p>
+            <p className="mt-1 text-sm">{openExpanded ? 'Hide' : 'Expand'}</p>
+          </article>
+          <article className={`rounded-xl border p-4 ${sectionTone.progress}`}>
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">Active (In Progress)</p>
+            <p className="mt-2 text-3xl font-semibold">{grouped.progress.length}</p>
+            <p className="mt-1 text-sm">Always visible</p>
+          </article>
+          <article className={`rounded-xl border p-4 ${sectionTone.completed}`}>
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">Completed</p>
+            <p className="mt-2 text-3xl font-semibold">{grouped.completed.length}</p>
+            <p className="mt-1 text-sm">Most recent first</p>
+          </article>
+          <article
+            className={`rounded-xl border p-4 ${sectionTone.atRisk} cursor-pointer transition hover:shadow-sm`}
+            onClick={() => setAtRiskExpanded((prev) => !prev)}
+          >
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">At Risk</p>
+            <p className="mt-2 text-3xl font-semibold">{grouped.atRisk.length}</p>
+            <p className="mt-1 text-sm">{atRiskExpanded ? 'Hide' : 'Expand'}</p>
+          </article>
+          <article className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">Total Revenue</p>
+            <p className="mt-2 text-2xl font-semibold">{formatCurrencyAed(grouped.totalRevenue)}</p>
+          </article>
+          <button
+            type="button"
+            onClick={onOpenBoard}
+            className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-left text-indigo-900 transition hover:shadow-sm"
+          >
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em]">Total Amount To Invoice</p>
+            <p className="mt-2 text-2xl font-semibold">{formatCurrencyAed(grouped.totalAmountToInvoice)}</p>
+            <p className="mt-1 text-sm">Click to open Board</p>
+          </button>
+        </div>
+
+        <section className="space-y-3">
+          <header className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-900">Active (In Progress)</h2>
+            <SectionViewToggle
+              value={displayMode.progress}
+              onChange={(mode) => setDisplayMode((prev) => ({ ...prev, progress: mode }))}
+            />
+          </header>
+          <SectionContent rows={grouped.progress} displayMode={displayMode.progress} />
+        </section>
+
+        {openExpanded ? (
+          <section className="space-y-3">
+            <header className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">New / Open</h2>
+              <SectionViewToggle
+                value={displayMode.open}
+                onChange={(mode) => setDisplayMode((prev) => ({ ...prev, open: mode }))}
+              />
+            </header>
+            <SectionContent rows={grouped.open} displayMode={displayMode.open} />
+          </section>
+        ) : null}
+
+        <section className="space-y-3">
+          <header className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-900">Completed</h2>
+            <SectionViewToggle
+              value={displayMode.completed}
+              onChange={(mode) => setDisplayMode((prev) => ({ ...prev, completed: mode }))}
+            />
+          </header>
+          <SectionContent rows={grouped.completed} displayMode={displayMode.completed} />
+        </section>
+
+        {atRiskExpanded ? (
+          <section className="space-y-3">
+            <header className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">At Risk</h2>
+              <SectionViewToggle
+                value={displayMode.atRisk}
+                onChange={(mode) => setDisplayMode((prev) => ({ ...prev, atRisk: mode }))}
+              />
+            </header>
+            <SectionContent rows={grouped.atRisk} displayMode={displayMode.atRisk} />
+          </section>
+        ) : null}
+      </section>
+    </AppShell>
+  );
+}

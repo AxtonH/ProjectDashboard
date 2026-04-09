@@ -3,9 +3,10 @@ import { MainView } from './pages/MainView';
 import { CardView } from './pages/CardView';
 import { AvailabilityView } from './pages/AvailabilityView';
 import { BoardView } from './pages/BoardView';
+import { DashboardView } from './pages/DashboardView';
 import type { OdooSnapshot } from './types/projects';
 
-type ViewMode = 'table' | 'cards' | 'availability' | 'board';
+type ViewMode = 'dashboard' | 'table' | 'cards' | 'availability' | 'board';
 type MarketFilter = 'all' | 'UAE' | 'KSA';
 
 const segmentButtonClass = (active: boolean) =>
@@ -24,6 +25,13 @@ function ViewSwitcher({
 }) {
   return (
     <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+      <button
+        type="button"
+        onClick={() => onChange('dashboard')}
+        className={segmentButtonClass(activeView === 'dashboard')}
+      >
+        Dashboard
+      </button>
       <button
         type="button"
         onClick={() => onChange('table')}
@@ -93,7 +101,7 @@ function MarketSwitcher({
 
 function App() {
   const buildMarker = 'live-api-v3';
-  const [view, setView] = useState<ViewMode>('table');
+  const [view, setView] = useState<ViewMode>('dashboard');
   const [market, setMarket] = useState<MarketFilter>('all');
   const [snapshot, setSnapshot] = useState<OdooSnapshot | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -187,6 +195,17 @@ function App() {
       </span>
     </div>
   );
+
+  if (view === 'dashboard') {
+    return (
+      <DashboardView
+        snapshot={snapshot}
+        viewSwitcher={switcher}
+        marketFilter={market}
+        onOpenBoard={() => setView('board')}
+      />
+    );
+  }
 
   if (view === 'cards') {
     return <CardView snapshot={snapshot} viewSwitcher={switcher} marketFilter={market} />;
