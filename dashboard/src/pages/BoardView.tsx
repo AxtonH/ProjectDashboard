@@ -4,7 +4,7 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
 type AtRiskValue = 'Yes' | 'No';
 type BoardColumnKey = 'open' | 'progress' | 'completed' | 'atRisk';
-type MarketFilter = 'all' | 'UAE' | 'KSA';
+type MarketFilter = 'all' | string;
 type SalesOrderKey = string;
 type PeriodMode = 'all' | 'last30';
 
@@ -101,8 +101,8 @@ function formatDate(value: string | null) {
 
 const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   if (marketFilter === 'all') return true;
-  const market = (row.market ?? '').trim().toUpperCase();
-  return market.includes(marketFilter);
+  const businessUnit = (row.businessUnit ?? row.market ?? '').trim().toUpperCase();
+  return businessUnit === marketFilter.toUpperCase();
 };
 
 const isCanceledStatus = (statusName: string | null | undefined) => {

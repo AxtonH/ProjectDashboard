@@ -8,7 +8,7 @@ type AtRiskValue = 'Yes' | 'No';
 type PriorityValue = 'High' | 'Med' | 'Low' | '—';
 type InvoicePercentOverrideValue = number | null;
 type CompletionRateValue = number | null;
-type MarketFilter = 'all' | 'UAE' | 'KSA';
+type MarketFilter = 'all' | string;
 type ColumnFilterState = Record<string, string>;
 type DateRangeFilterState = {
   startDateFrom: string;
@@ -198,8 +198,8 @@ const getAutoAtRisk = (row: ProjectRow): AtRiskValue => {
 
 const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   if (marketFilter === 'all') return true;
-  const market = (row.market ?? '').trim().toUpperCase();
-  return market.includes(marketFilter);
+  const businessUnit = (row.businessUnit ?? row.market ?? '').trim().toUpperCase();
+  return businessUnit === marketFilter.toUpperCase();
 };
 
 const isCanceledStatus = (statusName: string | null | undefined) => {

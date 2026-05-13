@@ -3,7 +3,7 @@ import { AppShell } from '../components/layout/AppShell';
 import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
 type WorkloadLabel = 'Available' | 'Acceptable' | 'High' | 'Overload';
-type MarketFilter = 'all' | 'UAE' | 'KSA';
+type MarketFilter = 'all' | string;
 type WeekWindow = 'past7' | 'next7';
 
 type PersonAvailability = {
@@ -41,8 +41,8 @@ const overlapsWindow = (row: ProjectRow, windowStart: number, windowEnd: number)
 
 const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   if (marketFilter === 'all') return true;
-  const market = (row.market ?? '').trim().toUpperCase();
-  return market.includes(marketFilter);
+  const businessUnit = (row.businessUnit ?? row.market ?? '').trim().toUpperCase();
+  return businessUnit === marketFilter.toUpperCase();
 };
 
 const isCanceledStatus = (statusName: string | null | undefined) => {
@@ -66,10 +66,10 @@ function workloadStyle(workload: WorkloadLabel) {
 
 const resolveWindowEntries = (
   snapshot: OdooSnapshot,
-  marketFilter: MarketFilter,
+  _marketFilter: MarketFilter,
   weekWindow: WeekWindow,
 ): AvailabilityEntry[] => {
-  const marketKey = marketFilter === 'UAE' ? 'uae' : marketFilter === 'KSA' ? 'ksa' : 'all';
+  const marketKey = 'all';
   const byMarket = snapshot.designerAvailabilityByMarket?.[marketKey];
   if (byMarket && !Array.isArray(byMarket)) {
     return weekWindow === 'past7' ? byMarket.past7Days : byMarket.next7Days;

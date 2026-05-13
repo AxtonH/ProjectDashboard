@@ -30,6 +30,7 @@ export type ProjectRow = {
   accountName: string | null;
   clientAccount: string | null;
   market: string | null;
+  businessUnit?: string | null;
   description: string;
   designer: PersonRole | null;
   designers?: PersonRole[];

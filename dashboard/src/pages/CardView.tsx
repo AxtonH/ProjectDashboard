@@ -5,7 +5,7 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 type DaysFilter = 'all' | 'overdue' | '0-7' | '8-14' | '15+' | 'tbd';
 type OverdueFilter = 'all' | 'overdue' | 'not_overdue';
 type AtRiskValue = 'Yes' | 'No';
-type MarketFilter = 'all' | 'UAE' | 'KSA';
+type MarketFilter = 'all' | string;
 
 const dayMs = 24 * 60 * 60 * 1000;
 const overdueCardColor = '#f4a3a8';
@@ -96,8 +96,8 @@ function isCompletedStatus(statusName: string | null | undefined) {
 
 const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   if (marketFilter === 'all') return true;
-  const market = (row.market ?? '').trim().toUpperCase();
-  return market.includes(marketFilter);
+  const businessUnit = (row.businessUnit ?? row.market ?? '').trim().toUpperCase();
+  return businessUnit === marketFilter.toUpperCase();
 };
 
 const isCanceledStatus = (statusName: string | null | undefined) => {

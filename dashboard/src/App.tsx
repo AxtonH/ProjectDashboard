@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MainView } from './pages/MainView';
 import { CardView } from './pages/CardView';
 import { AvailabilityView } from './pages/AvailabilityView';
@@ -7,7 +7,7 @@ import { DashboardView } from './pages/DashboardView';
 import type { OdooSnapshot } from './types/projects';
 
 type ViewMode = 'dashboard' | 'table' | 'cards' | 'availability' | 'board';
-type MarketFilter = 'all' | 'UAE' | 'KSA';
+type MarketFilter = 'all' | string;
 
 const segmentButtonClass = (active: boolean) =>
   `rounded-full px-3 py-1.5 text-[0.72rem] font-semibold tracking-[0.01em] transition ${
@@ -64,38 +64,31 @@ function ViewSwitcher({
   );
 }
 
-function MarketSwitcher({
+function BusinessUnitSwitcher({
   activeMarket,
+  businessUnits,
   onChange,
 }: {
   activeMarket: MarketFilter;
+  businessUnits: string[];
   onChange: (market: MarketFilter) => void;
 }) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-      <span className="px-2 text-[0.63rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Market</span>
-      <button
-        type="button"
-        onClick={() => onChange('all')}
-        className={segmentButtonClass(activeMarket === 'all')}
+    <label className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
+      <span className="uppercase tracking-[0.2em] text-[0.6rem] text-slate-400">Business Unit</span>
+      <select
+        className="bg-transparent text-slate-700 focus:outline-none"
+        value={activeMarket}
+        onChange={(event) => onChange(event.target.value)}
       >
-        All
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('UAE')}
-        className={segmentButtonClass(activeMarket === 'UAE')}
-      >
-        UAE
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('KSA')}
-        className={segmentButtonClass(activeMarket === 'KSA')}
-      >
-        KSA
-      </button>
-    </div>
+        <option value="all">All</option>
+        {businessUnits.map((unit) => (
+          <option key={unit} value={unit}>
+            {unit}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -105,6 +98,17 @@ function App() {
   const [market, setMarket] = useState<MarketFilter>('all');
   const [snapshot, setSnapshot] = useState<OdooSnapshot | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const businessUnits = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (snapshot?.rows ?? [])
+            .map((row) => (row.businessUnit ?? row.market ?? '').trim())
+            .filter((value) => Boolean(value)),
+        ),
+      ).sort((a, b) => a.localeCompare(b)),
+    [snapshot],
+  );
 
   useEffect(() => {
     let active = true;
@@ -189,7 +193,7 @@ function App() {
   const switcher = (
     <div className="flex flex-wrap items-center justify-end gap-2">
       <ViewSwitcher activeView={view} onChange={setView} />
-      <MarketSwitcher activeMarket={market} onChange={setMarket} />
+      <BusinessUnitSwitcher activeMarket={market} businessUnits={businessUnits} onChange={setMarket} />
       <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[0.7rem] font-semibold text-slate-600">
         Build: {buildMarker}
       </span>
