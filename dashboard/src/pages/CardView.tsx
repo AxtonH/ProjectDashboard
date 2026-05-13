@@ -6,6 +6,7 @@ type DaysFilter = 'all' | 'overdue' | '0-7' | '8-14' | '15+' | 'tbd';
 type OverdueFilter = 'all' | 'overdue' | 'not_overdue';
 type AtRiskValue = 'Yes' | 'No';
 type MarketFilter = 'all' | string;
+type SubBusinessUnitFilter = 'all' | string;
 
 const dayMs = 24 * 60 * 60 * 1000;
 const overdueCardColor = '#f4a3a8';
@@ -100,6 +101,12 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   return businessUnit === marketFilter.toUpperCase();
 };
 
+const matchesSubBusinessUnit = (row: ProjectRow, subBusinessUnitFilter: SubBusinessUnitFilter) => {
+  if (subBusinessUnitFilter === 'all') return true;
+  const subBusinessUnit = (row.subBusinessUnit ?? '').trim().toUpperCase();
+  return subBusinessUnit === subBusinessUnitFilter.toUpperCase();
+};
+
 const isCanceledStatus = (statusName: string | null | undefined) => {
   const value = (statusName ?? '').toLowerCase();
   return value.includes('cancel');
@@ -173,10 +180,12 @@ export function CardView({
   snapshot,
   viewSwitcher,
   marketFilter = 'all',
+  subBusinessUnitFilter = 'all',
 }: {
   snapshot: OdooSnapshot;
   viewSwitcher?: ReactNode;
   marketFilter?: MarketFilter;
+  subBusinessUnitFilter?: SubBusinessUnitFilter;
 }) {
   const baseRows: ProjectRow[] = snapshot.rows ?? [];
   const [designerFilter, setDesignerFilter] = useState('');
@@ -203,8 +212,14 @@ export function CardView({
     }
   }, []);
   const marketRows = useMemo(
-    () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
-    [baseRows, marketFilter],
+    () =>
+      baseRows.filter(
+        (row) =>
+          matchesMarket(row, marketFilter) &&
+          matchesSubBusinessUnit(row, subBusinessUnitFilter) &&
+          !isCanceledStatus(row.status?.name),
+      ),
+    [baseRows, marketFilter, subBusinessUnitFilter],
   );
 
   const designerOptions = useMemo(

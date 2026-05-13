@@ -3,6 +3,7 @@ import { AppShell } from '../components/layout/AppShell';
 import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
 type MarketFilter = 'all' | string;
+type SubBusinessUnitFilter = 'all' | string;
 type SectionKey = 'open' | 'progress' | 'completed' | 'atRisk';
 type SectionDisplay = 'cards' | 'list';
 type PeriodMode = 'all' | 'last30';
@@ -57,6 +58,12 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   if (marketFilter === 'all') return true;
   const businessUnit = (row.businessUnit ?? row.market ?? '').trim().toUpperCase();
   return businessUnit === marketFilter.toUpperCase();
+};
+
+const matchesSubBusinessUnit = (row: ProjectRow, subBusinessUnitFilter: SubBusinessUnitFilter) => {
+  if (subBusinessUnitFilter === 'all') return true;
+  const subBusinessUnit = (row.subBusinessUnit ?? '').trim().toUpperCase();
+  return subBusinessUnit === subBusinessUnitFilter.toUpperCase();
 };
 
 const isCanceledStatus = (statusName: string | null | undefined) => {
@@ -206,11 +213,13 @@ export function DashboardView({
   snapshot,
   viewSwitcher,
   marketFilter = 'all',
+  subBusinessUnitFilter = 'all',
   onOpenBoard,
 }: {
   snapshot: OdooSnapshot;
   viewSwitcher?: ReactNode;
   marketFilter?: MarketFilter;
+  subBusinessUnitFilter?: SubBusinessUnitFilter;
   onOpenBoard?: () => void;
 }) {
   const baseRows = snapshot.rows ?? [];
@@ -231,6 +240,7 @@ export function DashboardView({
   const grouped = useMemo(() => {
     const scoped = baseRows
       .filter((row) => matchesMarket(row, marketFilter))
+      .filter((row) => matchesSubBusinessUnit(row, subBusinessUnitFilter))
       .filter((row) => !isCanceledStatus(row.status?.name))
       .filter((row) => inSelectedPeriod(row, periodMode))
       .sort(sortByMostRecentRequest);
@@ -255,7 +265,7 @@ export function DashboardView({
     const totalAmountToInvoice = scoped.reduce((sum, row) => sum + Number(row.amountToInvoiceAed ?? 0), 0);
 
     return { open, progress, completed, atRisk, totalRevenue, totalAmountToInvoice };
-  }, [baseRows, marketFilter, periodMode]);
+  }, [baseRows, marketFilter, subBusinessUnitFilter, periodMode]);
 
   const lastSync = new Date(snapshot.generatedAt);
   const formattedLastSync = Number.isNaN(lastSync.getTime())

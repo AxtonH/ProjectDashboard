@@ -4,6 +4,7 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 
 type WorkloadLabel = 'Available' | 'Acceptable' | 'High' | 'Overload';
 type MarketFilter = 'all' | string;
+type SubBusinessUnitFilter = 'all' | string;
 type WeekWindow = 'past7' | 'next7';
 
 type PersonAvailability = {
@@ -45,6 +46,12 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   return businessUnit === marketFilter.toUpperCase();
 };
 
+const matchesSubBusinessUnit = (row: ProjectRow, subBusinessUnitFilter: SubBusinessUnitFilter) => {
+  if (subBusinessUnitFilter === 'all') return true;
+  const subBusinessUnit = (row.subBusinessUnit ?? '').trim().toUpperCase();
+  return subBusinessUnit === subBusinessUnitFilter.toUpperCase();
+};
+
 const isCanceledStatus = (statusName: string | null | undefined) => {
   const value = (statusName ?? '').toLowerCase();
   return value.includes('cancel');
@@ -84,10 +91,12 @@ export function AvailabilityView({
   snapshot,
   viewSwitcher,
   marketFilter = 'all',
+  subBusinessUnitFilter = 'all',
 }: {
   snapshot: OdooSnapshot;
   viewSwitcher?: ReactNode;
   marketFilter?: MarketFilter;
+  subBusinessUnitFilter?: SubBusinessUnitFilter;
 }) {
   const [weekWindow, setWeekWindow] = useState<WeekWindow>('past7');
   const [searchTerm, setSearchTerm] = useState('');
@@ -95,8 +104,14 @@ export function AvailabilityView({
 
   const baseRows: ProjectRow[] = snapshot.rows ?? [];
   const marketRows = useMemo(
-    () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
-    [baseRows, marketFilter],
+    () =>
+      baseRows.filter(
+        (row) =>
+          matchesMarket(row, marketFilter) &&
+          matchesSubBusinessUnit(row, subBusinessUnitFilter) &&
+          !isCanceledStatus(row.status?.name),
+      ),
+    [baseRows, marketFilter, subBusinessUnitFilter],
   );
 
   const availabilityCards = useMemo<PersonAvailability[]>(() => {

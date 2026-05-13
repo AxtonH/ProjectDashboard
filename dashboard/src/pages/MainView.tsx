@@ -9,6 +9,7 @@ type PriorityValue = 'High' | 'Med' | 'Low' | '—';
 type InvoicePercentOverrideValue = number | null;
 type CompletionRateValue = number | null;
 type MarketFilter = 'all' | string;
+type SubBusinessUnitFilter = 'all' | string;
 type ColumnFilterState = Record<string, string>;
 type DateRangeFilterState = {
   startDateFrom: string;
@@ -202,6 +203,12 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   return businessUnit === marketFilter.toUpperCase();
 };
 
+const matchesSubBusinessUnit = (row: ProjectRow, subBusinessUnitFilter: SubBusinessUnitFilter) => {
+  if (subBusinessUnitFilter === 'all') return true;
+  const subBusinessUnit = (row.subBusinessUnit ?? '').trim().toUpperCase();
+  return subBusinessUnit === subBusinessUnitFilter.toUpperCase();
+};
+
 const isCanceledStatus = (statusName: string | null | undefined) => {
   const value = (statusName ?? '').toLowerCase();
   return value.includes('cancel');
@@ -314,10 +321,12 @@ export function MainView({
   snapshot,
   viewSwitcher,
   marketFilter = 'all',
+  subBusinessUnitFilter = 'all',
 }: {
   snapshot: OdooSnapshot;
   viewSwitcher?: ReactNode;
   marketFilter?: MarketFilter;
+  subBusinessUnitFilter?: SubBusinessUnitFilter;
 }) {
   const baseRows: ProjectRow[] = snapshot.rows ?? [];
 
@@ -425,8 +434,14 @@ export function MainView({
   }, [baseRows]);
 
   const marketRows = useMemo(
-    () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
-    [baseRows, marketFilter],
+    () =>
+      baseRows.filter(
+        (row) =>
+          matchesMarket(row, marketFilter) &&
+          matchesSubBusinessUnit(row, subBusinessUnitFilter) &&
+          !isCanceledStatus(row.status?.name),
+      ),
+    [baseRows, marketFilter, subBusinessUnitFilter],
   );
 
   const columnFilterOptions = useMemo(() => {

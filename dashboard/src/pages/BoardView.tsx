@@ -5,6 +5,7 @@ import type { OdooSnapshot, ProjectRow } from '../types/projects';
 type AtRiskValue = 'Yes' | 'No';
 type BoardColumnKey = 'open' | 'progress' | 'completed' | 'atRisk';
 type MarketFilter = 'all' | string;
+type SubBusinessUnitFilter = 'all' | string;
 type SalesOrderKey = string;
 type PeriodMode = 'all' | 'last30';
 
@@ -105,6 +106,12 @@ const matchesMarket = (row: ProjectRow, marketFilter: MarketFilter) => {
   return businessUnit === marketFilter.toUpperCase();
 };
 
+const matchesSubBusinessUnit = (row: ProjectRow, subBusinessUnitFilter: SubBusinessUnitFilter) => {
+  if (subBusinessUnitFilter === 'all') return true;
+  const subBusinessUnit = (row.subBusinessUnit ?? '').trim().toUpperCase();
+  return subBusinessUnit === subBusinessUnitFilter.toUpperCase();
+};
+
 const isCanceledStatus = (statusName: string | null | undefined) => {
   const value = (statusName ?? '').toLowerCase();
   return value.includes('cancel');
@@ -166,10 +173,12 @@ export function BoardView({
   snapshot,
   viewSwitcher,
   marketFilter = 'all',
+  subBusinessUnitFilter = 'all',
 }: {
   snapshot: OdooSnapshot;
   viewSwitcher?: ReactNode;
   marketFilter?: MarketFilter;
+  subBusinessUnitFilter?: SubBusinessUnitFilter;
 }) {
   const baseRows: ProjectRow[] = snapshot.rows ?? [];
   const [statusFilter, setStatusFilter] = useState('all');
@@ -177,8 +186,14 @@ export function BoardView({
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [periodMode, setPeriodMode] = useState<PeriodMode>('all');
   const marketRows = useMemo(
-    () => baseRows.filter((row) => matchesMarket(row, marketFilter) && !isCanceledStatus(row.status?.name)),
-    [baseRows, marketFilter],
+    () =>
+      baseRows.filter(
+        (row) =>
+          matchesMarket(row, marketFilter) &&
+          matchesSubBusinessUnit(row, subBusinessUnitFilter) &&
+          !isCanceledStatus(row.status?.name),
+      ),
+    [baseRows, marketFilter, subBusinessUnitFilter],
   );
   const scopedRows = useMemo(
     () => marketRows.filter((row) => inSelectedPeriod(row, periodMode)),

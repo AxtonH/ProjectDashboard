@@ -7,7 +7,7 @@ import { DashboardView } from './pages/DashboardView';
 import type { OdooSnapshot } from './types/projects';
 
 type ViewMode = 'dashboard' | 'table' | 'cards' | 'availability' | 'board';
-type MarketFilter = 'all' | string;
+type GlobalFilter = 'all' | string;
 
 const segmentButtonClass = (active: boolean) =>
   `rounded-full px-3 py-1.5 text-[0.72rem] font-semibold tracking-[0.01em] transition ${
@@ -64,25 +64,27 @@ function ViewSwitcher({
   );
 }
 
-function BusinessUnitSwitcher({
-  activeMarket,
-  businessUnits,
+function GlobalDropdownFilter({
+  label,
+  value,
+  options,
   onChange,
 }: {
-  activeMarket: MarketFilter;
-  businessUnits: string[];
-  onChange: (market: MarketFilter) => void;
+  label: string;
+  value: GlobalFilter;
+  options: string[];
+  onChange: (value: GlobalFilter) => void;
 }) {
   return (
     <label className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
-      <span className="uppercase tracking-[0.2em] text-[0.6rem] text-slate-400">Business Unit</span>
+      <span className="uppercase tracking-[0.2em] text-[0.6rem] text-slate-400">{label}</span>
       <select
         className="bg-transparent text-slate-700 focus:outline-none"
-        value={activeMarket}
+        value={value}
         onChange={(event) => onChange(event.target.value)}
       >
         <option value="all">All</option>
-        {businessUnits.map((unit) => (
+        {options.map((unit) => (
           <option key={unit} value={unit}>
             {unit}
           </option>
@@ -95,7 +97,8 @@ function BusinessUnitSwitcher({
 function App() {
   const buildMarker = 'live-api-v3';
   const [view, setView] = useState<ViewMode>('dashboard');
-  const [market, setMarket] = useState<MarketFilter>('all');
+  const [businessUnit, setBusinessUnit] = useState<GlobalFilter>('all');
+  const [subBusinessUnit, setSubBusinessUnit] = useState<GlobalFilter>('all');
   const [snapshot, setSnapshot] = useState<OdooSnapshot | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const businessUnits = useMemo(
@@ -104,6 +107,17 @@ function App() {
         new Set(
           (snapshot?.rows ?? [])
             .map((row) => (row.businessUnit ?? row.market ?? '').trim())
+            .filter((value) => Boolean(value)),
+        ),
+      ).sort((a, b) => a.localeCompare(b)),
+    [snapshot],
+  );
+  const subBusinessUnits = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (snapshot?.rows ?? [])
+            .map((row) => (row.subBusinessUnit ?? '').trim())
             .filter((value) => Boolean(value)),
         ),
       ).sort((a, b) => a.localeCompare(b)),
@@ -193,7 +207,8 @@ function App() {
   const switcher = (
     <div className="flex flex-wrap items-center justify-end gap-2">
       <ViewSwitcher activeView={view} onChange={setView} />
-      <BusinessUnitSwitcher activeMarket={market} businessUnits={businessUnits} onChange={setMarket} />
+      <GlobalDropdownFilter label="Business Unit" value={businessUnit} options={businessUnits} onChange={setBusinessUnit} />
+      <GlobalDropdownFilter label="Sub-business Unit" value={subBusinessUnit} options={subBusinessUnits} onChange={setSubBusinessUnit} />
       <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[0.7rem] font-semibold text-slate-600">
         Build: {buildMarker}
       </span>
@@ -205,25 +220,26 @@ function App() {
       <DashboardView
         snapshot={snapshot}
         viewSwitcher={switcher}
-        marketFilter={market}
+        marketFilter={businessUnit}
+        subBusinessUnitFilter={subBusinessUnit}
         onOpenBoard={() => setView('board')}
       />
     );
   }
 
   if (view === 'cards') {
-    return <CardView snapshot={snapshot} viewSwitcher={switcher} marketFilter={market} />;
+    return <CardView snapshot={snapshot} viewSwitcher={switcher} marketFilter={businessUnit} subBusinessUnitFilter={subBusinessUnit} />;
   }
 
   if (view === 'availability') {
-    return <AvailabilityView snapshot={snapshot} viewSwitcher={switcher} marketFilter={market} />;
+    return <AvailabilityView snapshot={snapshot} viewSwitcher={switcher} marketFilter={businessUnit} subBusinessUnitFilter={subBusinessUnit} />;
   }
 
   if (view === 'board') {
-    return <BoardView snapshot={snapshot} viewSwitcher={switcher} marketFilter={market} />;
+    return <BoardView snapshot={snapshot} viewSwitcher={switcher} marketFilter={businessUnit} subBusinessUnitFilter={subBusinessUnit} />;
   }
 
-  return <MainView snapshot={snapshot} viewSwitcher={switcher} marketFilter={market} />;
+  return <MainView snapshot={snapshot} viewSwitcher={switcher} marketFilter={businessUnit} subBusinessUnitFilter={subBusinessUnit} />;
 }
 
 export default App;

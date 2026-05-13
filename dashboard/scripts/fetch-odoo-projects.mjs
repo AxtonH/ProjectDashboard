@@ -44,7 +44,7 @@ const requiredTaskFields = [
   'parent_id',
 ];
 
-const projectFields = ['name', 'partner_id', 'sale_order_id', 'tag_ids', 'x_studio_market_2', 'x_studio_project_bu'];
+const projectFields = ['name', 'partner_id', 'sale_order_id', 'tag_ids', 'x_studio_market_2', 'x_studio_project_bu', 'x_studio_project_sbu'];
 const saleOrderFields = ['name', 'state', 'invoice_status', 'project_id', 'project_ids', 'invoice_ids', 'x_studio_aed_amount_to_invoice', 'x_studio_aed_total'];
 const saleOrderLineFields = ['order_id', 'product_uom_qty', 'qty_invoiced', 'price_subtotal', 'price_total'];
 const accountMoveFields = ['payment_state', 'state', 'move_type'];
@@ -758,6 +758,7 @@ function normalizeTasks(
       clientAccount: projectRecord?.partner_id?.[1] ?? null,
       market: projectRecord?.x_studio_market_2?.[1] ?? null,
       businessUnit: projectRecord?.x_studio_project_bu?.[1] ?? null,
+      subBusinessUnit: projectRecord?.x_studio_project_sbu?.[1] ?? null,
       description: task.description ?? '',
       designer: primaryDesigner,
       designers: normalizedDesigners,
