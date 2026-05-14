@@ -186,6 +186,16 @@ const toTimestamp = (value: string | null) => {
   return Number.isNaN(time) ? null : time;
 };
 
+const matchesMonthYearFilter = (value: string | null, monthFilter: string) => {
+  if (!monthFilter) return true;
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = String(date.getFullYear());
+  return `${year}-${month}` === monthFilter;
+};
+
 const getAutoAtRisk = (row: ProjectRow): AtRiskValue => {
   const value = (row.status?.name ?? '').toLowerCase();
   const isCompleted = value.includes('complete') || value.includes('done');
@@ -498,6 +508,10 @@ export function MainView({
           column.key === 'revenue' ||
           column.key === 'amountToInvoice'
         ) return true;
+        if (column.key === 'requestReceiptDateTime') {
+          const monthFilter = (columnFilters[column.key] ?? '').trim();
+          return matchesMonthYearFilter(row.startDate, monthFilter);
+        }
         const query = (columnFilters[column.key] ?? '').trim().toLowerCase();
         if (!query) return true;
         return getColumnValue(row, column.key, rowPriority, rowInvoicePercentOverride, rowCompletionRate)
@@ -676,6 +690,15 @@ export function MainView({
                             }
                           />
                         </div>
+                      ) : column.key === 'requestReceiptDateTime' ? (
+                        <input
+                          type="month"
+                          className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 focus:border-slate-300 focus:outline-none"
+                          value={columnFilters[column.key] ?? ''}
+                          onChange={(event) =>
+                            setColumnFilters((prev) => ({ ...prev, [column.key]: event.target.value }))
+                          }
+                        />
                       ) : column.key === 'description' || column.key === 'revenue' || column.key === 'amountToInvoice' ? (
                         <span className="block text-center text-xs text-slate-300">—</span>
                       ) : (
